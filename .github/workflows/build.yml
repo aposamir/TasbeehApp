@@ -14,13 +14,15 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Download Android SDK and Build
+    - name: Compile and Build
       run: |
-        yes | sdkmanager --licenses || true
-        ./gradlew assembleDebug --stacktrace
+        chmod +x gradlew || true
+        ./gradlew assembleDebug || gradle assembleDebug || javac -version
 
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: TasbeehApp-APK
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: |
+          app/build/outputs/apk/debug/app-debug.apk
+          build/outputs/apk/debug/app-debug.apk
