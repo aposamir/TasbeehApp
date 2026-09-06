@@ -30,8 +30,8 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setDomStorageEnabled(true);
         webView.setWebViewClient(new WebViewClient());
         
-        // ضع رابط موقع المسبحة الخاص بك هنا داخل علامتي التنصيص
-        webView.loadUrl("رابط_موقعك_هنا"); 
+        // تم التعديل هنا لقراءة المسبحة من ملف index.html الداخلي
+        webView.loadUrl("file:///android_asset/index.html"); 
 
         webView.addJavascriptInterface(new WebAppInterface(), "AndroidBridge");
 
