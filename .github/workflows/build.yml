@@ -1,13 +1,32 @@
-name: Package Project
-on: [push]
+name: Build Android APK
+
+on: 
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
 jobs:
-  zip:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Create ZIP archive
-      run: zip -r tasbeeh-project.zip .
-    - uses: actions/upload-artifact@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
       with:
-        name: Tasbeeh-Source-Code
-        path: tasbeeh-project.zip
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build APK (Debug)
+      run: ./gradlew assembleDebug
+
+    - name: Upload APK as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TasbeehApp-Debug
+        path: app/build/outputs/apk/debug/*.apk
