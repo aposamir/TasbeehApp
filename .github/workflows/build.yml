@@ -9,14 +9,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
+    - uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Build with standard gradle
-      run: gradle build
+    - name: Download Android SDK and Build
+      run: |
+        yes | sdkmanager --licenses || true
+        ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v3
