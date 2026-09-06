@@ -1,28 +1,32 @@
-name: Build APK
+name: Build Android APK
 
-on: [push]
+on: 
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - uses: actions/setup-java@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Build with Gradle
-      run: |
-        chmod +x gradlew || true
-        ./gradlew assembleDebug || gradle assembleDebug || true
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v3
 
-    - name: Upload APK Artifact
+    - name: Build APK
+      run: gradle build
+
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: TasbeehApp-APK
-        path: |
-          **/*.apk
-          app/build/outputs/apk/**/*.apk
+        name: TasbeehApp
+        path: app/build/outputs/apk/debug/*.apk
