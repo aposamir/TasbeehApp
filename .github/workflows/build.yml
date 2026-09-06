@@ -20,7 +20,7 @@ jobs:
         ./gradlew assembleDebug --continue || gradle assembleDebug --continue || true
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: TasbeehApp-APK
         path: |
