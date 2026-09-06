@@ -1,0 +1,1361 @@
+<!DOCTYPE html>  
+<html lang="ar" dir="rtl">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
+<title>مسبحة جامع عبد الرحمن بن عوف</title>  
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>  
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>  
+<style>  
+  :root{  
+    --night: #0E2E2C;  
+    --night-deep: #081C1B;  
+    --gold: #C9A15A;  
+    --gold-soft: #E4C888;  
+    --sage: #6E9B8C;  
+    --cream: #F3ECDD;  
+    --line: rgba(201,161,90,0.22);  
+  }  
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }  
+  html,body{ height:100%; margin:0; }  
+  body{  
+    background: radial-gradient(1200px 800px at 50% -10%, #133A37 0%, var(--night) 45%, var(--night-deep) 100%);  
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;  
+    color: var(--cream);  
+    min-height:100vh;  
+    display:flex;  
+    flex-direction:column;  
+    align-items:center;  
+    justify-content:space-between;  
+    overflow-x:hidden;  <!DOCTYPE html>  
+<html lang="ar" dir="rtl">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
+<title>مسبحة جامع عبد الرحمن بن عوف</title>  
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>  
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>  
+<style>  
+  :root{  
+    --night: #0E2E2C;  
+    --night-deep: #081C1B;  
+    --gold: #C9A15A;  
+    --gold-soft: #E4C888;  
+    --sage: #6E9B8C;  
+    --cream: #F3ECDD;  
+    --line: rgba(201,161,90,0.22);  
+  }  
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }  
+  html,body{ height:100%; margin:0; }  
+  body{  
+    background: radial-gradient(1200px 800px at 50% -10%, #133A37 0%, var(--night) 45%, var(--night-deep) 100%);  
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;  
+    color: var(--cream);  
+    min-height:100vh;  
+    display:flex;  
+    flex-direction:column;  
+    align-items:center;  
+    justify-content:space-between;  
+    overflow-x:hidden;  
+    padding: 16px 10px 20px;  
+    position:relative;  
+  }  
+  body::before{  
+    content:"";  
+    position:fixed; inset:0;  
+    background-image:  
+      linear-gradient(30deg, var(--line) 1px, transparent 1px),  
+      linear-gradient(150deg, var(--line) 1px, transparent 1px),  
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);  
+    background-size: 64px 110px;  
+    opacity:0.35;  
+    pointer-events:none;  
+    z-index:0;  
+  }  
+  .wrap{ position:relative; z-index:1; width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; flex:1; }  
+    
+  header{   
+    text-align:center;   
+    margin-top:4px;   
+    padding: 0 6px;  
+    display:flex;  
+    align-items:center;  
+    justify-content:center;  
+    white-space:nowrap;
+  }  
+  header h1{  
+    font-family: serif;  
+    font-weight:700;  
+    font-size: 1.35rem;  
+    line-height:1.2;  
+    margin:0;  
+    color: var(--gold-soft);  
+    text-shadow: 0 0 18px rgba(228,200,136,0.25);  
+  }  
+  
+  .live-badge{  
+    background:rgba(76,175,80,0.15);  
+    border:1px solid #4CAF50;  
+    border-radius:8px;  
+    padding:4px 10px;  
+    font-size:0.65rem;  
+    color:#81C784;  
+    display:inline-flex;  
+    align-items:center;
+    justify-content:center;
+  }  
+  
+  .dhikr-select{  
+    margin-top:12px;  
+    display:flex;  
+    gap:6px;  
+    flex-wrap:wrap;  
+    justify-content:center;  
+  }  
+  .dhikr-chip{  
+    background: rgba(255,255,255,0.04);  
+    border:1px solid var(--line);  
+    color: var(--cream);  
+    padding:5px 12px;  
+    border-radius:999px;  
+    font-size:0.7rem;  
+    cursor:pointer;  
+    transition: all .2s ease;  
+    text-align:center;  
+  }  
+  .dhikr-chip.active{  
+    background: var(--gold);  
+    color: var(--night-deep);  
+    border-color: var(--gold);  
+    font-weight:700;  
+  }  
+  .dhikr-chip .badge-inf{  
+    background: rgba(201,161,90,0.2);  
+    border-radius:999px;  
+    padding:1px 8px;  
+    font-size:0.55rem;  
+    color: var(--gold-soft);  
+    margin-right:3px;  
+  }  
+  .dhikr-chip.active .badge-inf{  
+    background: rgba(14,46,44,0.3);  
+    color: var(--night-deep);  
+  }  
+  
+  .name-input-area{  
+    display:flex;  
+    gap:6px;  
+    margin-top:12px;  
+    flex-wrap:wrap;  
+    align-items:center;  
+    justify-content:center;  
+    width:100%;  
+  }  
+  .name-input-area input{  
+    background:rgba(255,255,255,0.08);  
+    border:1px solid var(--line);  
+    border-radius:10px;  
+    padding:6px 12px;  
+    color:var(--cream);  
+    font-size:0.85rem;  
+    width:140px;  
+    text-align:center;  
+  }  
+  .name-input-area input:focus{  
+    outline:2px solid var(--gold);  
+    border-color:transparent;  
+  }  
+  .name-input-area .btn{  
+    padding:6px 14px;  
+    font-size:0.75rem;  
+  }  
+  .user-badge{  
+    background:rgba(201,161,90,0.15);  
+    border:1px solid var(--gold);  
+    border-radius:8px;  
+    padding:2px 12px;  
+    font-size:0.7rem;  
+    color:var(--gold-soft);  
+  }  
+  
+  /* الحاوية المركزية للعداد وجانبي الأسماء */
+  .counter-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding: 0 2px;
+  }
+
+  .counter-zone{  
+    position:relative;  
+    width: min(64vw, 230px);  
+    height: min(64vw, 230px);  
+    display:flex;  
+    align-items:center;  
+    justify-content:center;  
+    flex-shrink: 0;
+    margin: 0 auto;
+  }  
+  .beads{ position:absolute; inset:0; pointer-events:none; }  
+  .bead{  
+    position:absolute;  
+    width:10px; height:10px;  
+    border-radius:50%;  
+    background: rgba(201,161,90,0.18);  
+    border:1px solid rgba(201,161,90,0.3);  
+    transform: translate(-50%,-50%);  
+    transition: background .25s ease, box-shadow .25s ease;  
+  }  
+  .bead.filled{  
+    background: var(--gold);  
+    box-shadow: 0 0 10px 2px rgba(201,161,90,0.55);  
+    border-color: var(--gold);  
+  }  
+  .tap-btn{  
+    position:relative;  
+    z-index:2;  
+    width: 62%;  
+    height: 62%;  
+    border-radius:50%;  
+    background: radial-gradient(circle at 35% 30%, #1C4A45, var(--night-deep) 70%);  
+    border: 2px solid var(--gold);  
+    box-shadow: 0 0 0 6px rgba(201,161,90,0.06), inset 0 0 30px rgba(0,0,0,0.4);  
+    color: var(--cream);  
+    display:flex;  
+    flex-direction:column;  
+    align-items:center;  
+    justify-content:center;  
+    cursor:pointer;  
+    user-select:none;  
+    transition: transform .08s ease;  
+  }  
+  .tap-btn:active{ transform: scale(0.94); }  
+  .tap-count{  
+    font-family: serif;  
+    font-size: 2.5rem;  
+    font-weight:700;  
+    color: var(--gold-soft);  
+    line-height:1;  
+  }  
+  .tap-target{  
+    margin-top:2px;  
+    font-size:0.7rem;  
+    color: var(--sage);  
+  }  
+  .tap-hint{  
+    margin-top:4px;  
+    font-size:0.65rem;  
+    color: rgba(243,236,221,0.45);  
+  }  
+  .cycles{  
+    margin-top:2px;  
+    font-size:0.7rem;  
+    color: var(--sage);  
+    min-height:16px;  
+    text-align:center;  
+  }  
+
+  /* حاويات النشاط المباشر على الجانبين من الأسفل */
+  .active-side-container {
+    width: 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+    z-index: 3;
+    margin-bottom: 6px;
+    min-height: 40px;
+  }
+  .active-side-container.right {
+    align-items: flex-end;
+    text-align: right;
+  }
+  .active-side-container.left {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .active-dhikr-pill {
+    background: rgba(14, 46, 44, 0.95);
+    border: 1px solid var(--gold);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    padding: 4px 6px;
+    border-radius: 8px;
+    font-size: 0.62rem;
+    color: var(--gold-soft);
+    line-height: 1.2;
+    animation: fadeInSlide 0.3s ease-out;
+    backdrop-filter: blur(4px);
+    width: 100%;
+    word-break: break-word;
+  }
+  .active-dhikr-pill span {
+    color: var(--cream);
+    display: block;
+    font-size: 0.52rem;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
+  @keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .controls{  
+    display:flex;  
+    gap:8px;  
+    margin-top:10px;  
+    flex-wrap:wrap;  
+    justify-content:center;  
+  }  
+  .btn{  
+    background: rgba(255,255,255,0.05);  
+    border:1px solid var(--line);  
+    color: var(--cream);  
+    padding:8px 16px;  
+    border-radius:12px;  
+    font-size:0.8rem;  
+    cursor:pointer;  
+    transition: background .2s ease;  
+  }  
+  .btn:hover{ background: rgba(255,255,255,0.09); }  
+  .btn.danger{ border-color: rgba(201,90,90,0.4); color:#e0a3a3; }  
+  .btn.gold{ border-color: var(--gold); color: var(--gold-soft); }  
+  .btn.success{ border-color: #4CAF50; color: #81C784; }  
+  .btn.info{ border-color: #42A5F5; color: #64B5F6; }  
+  
+  .total-card{  
+    width:100%;  
+    max-width:440px;  
+    margin-top:10px;  
+    background: rgba(255,255,255,0.035);  
+    border:1px solid var(--line);  
+    border-radius:14px;  
+    padding:12px 16px;  
+    display:flex;  
+    align-items:center;  
+    justify-content:space-between;  
+  }  
+  .total-label{ font-size:0.75rem; color: var(--sage); }  
+  .total-value{  
+    font-family: serif;  
+    font-size:1.5rem;  
+    color: var(--gold-soft);  
+    font-weight:700;  
+  }  
+  .total-reset{  
+    background:none; border:none; color: rgba(243,236,221,0.4);  
+    font-size:0.65rem; cursor:pointer; text-decoration:underline;  
+  }  
+
+  .personal-values-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .personal-sub{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .personal-sub .total-label{
+    font-size:0.62rem;
+    text-align:center;
+  }
+  .personal-sub .total-value{
+    font-size:1.1rem;
+  }
+  .personal-divider{
+    width:1px;
+    height:28px;
+    background: var(--line);
+  }
+  
+  .goal-wrap{ width:100%; }  
+  .goal-track{  
+    width:100%; height:5px; border-radius:999px;  
+    background: rgba(255,255,255,0.06);  
+    overflow:hidden;  
+    margin-top:6px;  
+  }  
+  .goal-fill{  
+    height:100%; width:0%;  
+    background: linear-gradient(90deg, var(--sage), var(--gold));  
+    border-radius:999px;  
+    transition: width .4s ease;  
+  }  
+  .goal-note{  
+    margin-top:4px;  
+    font-size:0.6rem;  
+    color: rgba(243,236,221,0.45);  
+    text-align:left;  
+    direction:ltr;  
+  }  
+  
+  .manual-input-area{  
+    display:flex;  
+    gap:6px;  
+    margin-top:8px;  
+    flex-wrap:wrap;  
+    align-items:center;  
+    justify-content:center;  
+    width:100%;  
+  }  
+  .manual-input-area input{  
+    background:rgba(255,255,255,0.08);  
+    border:1px solid var(--line);  
+    border-radius:10px;  
+    padding:6px 10px;  
+    color:var(--cream);  
+    font-size:0.85rem;  
+    width:100px;  
+    text-align:center;  
+    direction:ltr;  
+  }  
+  .manual-input-area input:focus{  
+    outline:2px solid var(--gold);  
+    border-color:transparent;  
+  }  
+  .manual-input-area input::placeholder{  
+    color:rgba(243,236,221,0.3);  
+  }  
+  .manual-input-area .btn{  
+    padding:6px 14px;  
+    font-size:0.75rem;  
+  }  
+  .manual-label{  
+    font-size:0.6rem;  
+    color:var(--sage);  
+    width:100%;  
+    text-align:center;  
+    margin-bottom:2px;  
+  }  
+  .weekly-limit-info{  
+    font-size:0.6rem;  
+    color:var(--gold-soft);  
+    text-align:center;  
+    margin-top:2px;  
+  }  
+  
+  .leaderboard-bar{  
+    display:flex;  
+    align-items:center;  
+    justify-content:center;  
+    gap:10px;  
+    margin-top:6px;  
+    flex-wrap:wrap;  
+  }  
+  
+  .leaderboard{  
+    width:100%;  
+    margin-top:10px;  
+    background:rgba(255,255,255,0.04);  
+    border-radius:12px;  
+    padding:8px 12px;  
+    border:1px solid var(--line);  
+    max-height:180px;  
+    overflow-y:auto;  
+  }  
+  .leaderboard h4{  
+    font-family: serif;  
+    color:var(--gold-soft);  
+    margin:0 0 6px 0;  
+    text-align:center;  
+    font-size:0.9rem;  
+  }  
+  .leaderboard-item{  
+    display:flex;  
+    justify-content:space-between;  
+    padding:4px 8px;  
+    border-bottom:1px solid rgba(255,255,255,0.05);  
+    font-size:0.75rem;  
+  }  
+  .leaderboard-item:last-child{ border-bottom:none; }  
+  .lb-rank{ color:var(--gold); margin-left:4px; }  
+  .lb-name{ color:var(--cream); }  
+  .lb-count{ color:var(--gold-soft); font-weight:700; }  
+  .leaderboard-empty{  
+    text-align:center;  
+    color:rgba(243,236,221,0.4);  
+    font-size:0.7rem;  
+    padding:6px 0;  
+  }  
+  .week-info{  
+    font-size:0.6rem;  
+    color:var(--sage);  
+    text-align:center;  
+    margin-top:2px;  
+  }  
+  .status-online{  
+    color:#81C784;  
+    font-size:0.55rem;  
+    margin-right:4px;  
+  }  
+  .status-offline{  
+    color:#e57373;  
+    font-size:0.55rem;  
+    margin-right:4px;  
+  }  
+  .highlight-gold{ color:var(--gold-soft); }  
+  footer{ margin-top:14px; font-size:0.65rem; color:rgba(243,236,221,0.4); text-align:center; line-height:1.6; }  
+  .toast{  
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px);  
+    background:var(--gold); color:var(--night-deep);  
+    padding:7px 16px; border-radius:999px; font-size:0.8rem; font-weight:700;  
+    opacity:0; transition:all .35s ease; z-index:5; pointer-events:none;  
+  }  
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }  
+
+  /* الفقاعة العائمة */
+  .float-bubble{
+    position:fixed;
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #1C4A45, var(--night-deep) 70%);
+    border: 2px solid var(--gold);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 0 4px rgba(201,161,90,0.08);
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:var(--gold-soft);
+    z-index:50;
+    cursor:pointer;
+    user-select:none;
+    touch-action:none;
+    right:16px;
+    bottom:90px;
+  }
+  .float-bubble.visible{ display:flex; }
+  .float-bubble .fb-count{
+    font-family: serif;
+    font-weight:700;
+    font-size:1.15rem;
+    line-height:1;
+  }
+  .float-bubble .fb-label{
+    font-size:0.45rem;
+    color:var(--sage);
+    margin-top:2px;
+  }
+  .float-bubble .fb-close{
+    position:absolute;
+    top:-6px;
+    left:-6px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--night-deep);
+    border:1px solid var(--gold);
+    color:var(--cream);
+    font-size:0.6rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .bubble-toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-top:8px;
+  }
+
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }  
+  ::-webkit-scrollbar{ width:3px; }  
+  ::-webkit-scrollbar-track{ background:transparent; }  
+  ::-webkit-scrollbar-thumb{ background:var(--gold); border-radius:9px; }  
+</style>  
+</head>  
+<body>  
+<div class="wrap">  
+  <header>  
+    <h1>📿 مسبحة جامع عبد الرحمن بن عوف 🕌</h1>  
+  </header>    
+  
+  <div class="dhikr-select" id="dhikrSelect">  
+    <div class="dhikr-chip" data-dhikr="سبحان الله" data-target="33" data-add-total="false">سبحان الله <span class="badge-inf">33</span></div>  
+    <div class="dhikr-chip" data-dhikr="الحمد لله" data-target="33" data-add-total="false">الحمد لله <span class="badge-inf">33</span></div>  
+    <div class="dhikr-chip" data-dhikr="الله أكبر" data-target="33" data-add-total="false">الله أكبر <span class="badge-inf">33</span></div>  
+    <div class="dhikr-chip" data-dhikr="لا إله إلا الله" data-target="100" data-add-total="false">لا إله إلا الله <span class="badge-inf">100</span></div>  
+    <div class="dhikr-chip" data-dhikr="استغفر الله" data-target="100" data-add-total="false">استغفر الله <span class="badge-inf">100</span></div>  
+    <div class="dhikr-chip active" data-dhikr="اللهم صل على محمد وآله وسلم" data-target="∞" data-add-total="true">اللهم صل على محمد وآله وسلم <span class="badge-inf">∞</span></div>  
+  </div>    
+  
+  <div class="counter-wrapper">
+    <!-- حاوية الجانب الأيمن (أسفل يمين الدائرة) -->
+    <div class="active-side-container right" id="activeSideRight"></div>
+
+    <div class="counter-zone">  
+      <div class="beads" id="beads"></div>  
+      <div class="tap-btn" id="tapBtn">  
+        <div class="tap-count" id="tapCount">0</div>  
+        <div class="tap-target" id="tapTarget">من 33</div>  
+      </div>  
+    </div>  
+
+    <!-- حاوية الجانب الأيسر (أسفل يسار الدائرة) -->
+    <div class="active-side-container left" id="activeSideLeft"></div>
+  </div>
+
+  <div class="tap-hint">👆 اضغط للعدّ (أو زر رفع الصوت والصفحة مفتوحة)</div>  
+  <div class="cycles" id="cyclesLabel"></div>    
+  
+  <div class="controls">  
+    <button class="btn" id="targetBtn">تغيير الهدف</button>  
+    <button class="btn danger" id="resetBtn">🔄 تصفير</button>  
+  </div>    
+  
+  <div class="total-card">  
+    <div class="personal-values-row">
+      <div class="personal-sub">
+        <div class="total-label">📱 كل الأذكار</div>  
+        <div class="total-value" id="personalValue">0</div>  
+      </div>
+      <div class="personal-divider"></div>
+      <div class="personal-sub">
+        <div class="total-label">📿 الصلاة على النبي ﷺ</div>
+        <div class="total-value" id="personalSalawatValue">0</div>
+      </div>
+    </div>
+    <button class="total-reset" id="personalResetBtn">تصفير</button>  
+  </div>    
+  
+  <div class="total-card" style="flex-direction:column; align-items:stretch; gap:4px;">  
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">  
+      <div class="total-label">📿 <span class="highlight-gold">العدد الكلي للصلاة على النبي ﷺ</span> <span id="onlineIndicator" class="status-offline">○</span></div>  
+      <div class="total-value" id="totalValue">0</div>  
+    </div>  
+    <div class="goal-wrap">  
+      <div class="goal-track"><div class="goal-fill" id="goalFill"></div></div>  
+      <div class="goal-note" id="goalNote">الهدف: 1,000,000,000</div>  
+    </div>  
+    
+    <div class="manual-input-area">  
+      <div class="manual-label">➕ أضف صلوات (حد أقصى 99,999 في الأسبوع)</div>  
+      <input type="number" id="manualInput" min="1" max="99999" placeholder="0">  
+      <button class="btn success" id="manualAddBtn">➕ إضافة</button>  
+      <button class="btn danger" id="manualClearBtn">✖</button>  
+    </div>  
+    <div class="weekly-limit-info" id="weeklyLimitInfo">المتبقي هذا الأسبوع: 99,999</div>  
+
+    <div class="name-input-area">  
+      <input type="text" id="userNameInput" placeholder="✏️ أدخل اسمك" maxlength="20">  
+      <button class="btn gold" id="setNameBtn">✅ حفظ</button>  
+      <span id="userNameDisplay" class="user-badge" style="display:none;"></span>  
+    </div>    
+
+    <div class="leaderboard-bar">  
+      <button class="btn info" id="toggleLeaderboardBtn" style="font-size:0.75rem;padding:6px 14px;">🏆 قائمة الأوائل</button>  
+      <span class="live-badge" id="connectionStatus">● جاري الاتصال...</span>  
+    </div>  
+
+    <div id="leaderboardContainer" style="display:none; width:100%;">  
+      <div class="leaderboard">  
+        <h4>🏆 الأوائل هذا الأسبوع</h4>  
+        <div class="week-info" id="weekInfo"></div>  
+        <div id="leaderboardBody"></div>  
+      </div>  
+    </div>  
+
+    <div class="bubble-toggle-row">
+      <button class="btn gold" id="bubbleToggleBtn">📿 تفعيل الفقاعة العائمة</button>
+    </div>
+  </div>    
+  
+  <footer>📌 العدّاد الفردي خاص بك | 📿 عدّاد الصلاة على النبي ﷺ وقائمة الأوائل مشتركة وتُحدّث لحظياً</footer>  
+</div>  
+
+<!-- الفقاعة العائمة داخل الصفحة -->
+<div class="float-bubble" id="floatBubble">
+  <div class="fb-close" id="fbClose">✖</div>
+  <div class="fb-count" id="fbCount">0</div>
+  <div class="fb-label">📿 صلِّ</div>
+</div>
+
+<div class="toast" id="toast"></div>  
+
+<script>  
+  const firebaseConfig = {  
+    apiKey: "AIzaSyDMbK1-8zrba_bDtFPl6w33uDBZCN5fARI",  
+    authDomain: "billion-salawat.firebaseapp.com",  
+    databaseURL: "https://billion-salawat-default-rtdb.firebaseio.com",  
+    projectId: "billion-salawat",  
+    storageBucket: "billion-salawat.firebasestorage.app",  
+    messagingSenderId: "863812009619",  
+    appId: "1:863812009619:web:6e83d2e575372438e6d766",  
+    measurementId: "G-P7ZWT4RHP7"  
+  };  
+  
+  firebase.initializeApp(firebaseConfig);  
+  const database = firebase.database();  
+  
+  (function(){  
+    const tapBtn = document.getElementById('tapBtn');  
+    const tapCount = document.getElementById('tapCount');  
+    const tapTarget = document.getElementById('tapTarget');  
+    const beadsEl = document.getElementById('beads');  
+    const totalValue = document.getElementById('totalValue');  
+    const goalFill = document.getElementById('goalFill');  
+    const goalNote = document.getElementById('goalNote');  
+    const personalValue = document.getElementById('personalValue');  
+    const personalSalawatValue = document.getElementById('personalSalawatValue');  
+    const personalResetBtn = document.getElementById('personalResetBtn');  
+    const cyclesLabel = document.getElementById('cyclesLabel');  
+    const resetBtn = document.getElementById('resetBtn');  
+    const targetBtn = document.getElementById('targetBtn');  
+    const dhikrSelect = document.getElementById('dhikrSelect');  
+    const toast = document.getElementById('toast');  
+    const manualInput = document.getElementById('manualInput');  
+    const manualAddBtn = document.getElementById('manualAddBtn');  
+    const manualClearBtn = document.getElementById('manualClearBtn');  
+    const userNameInput = document.getElementById('userNameInput');  
+    const setNameBtn = document.getElementById('setNameBtn');  
+    const userNameDisplay = document.getElementById('userNameDisplay');  
+    const toggleLeaderboardBtn = document.getElementById('toggleLeaderboardBtn');  
+    const leaderboardContainer = document.getElementById('leaderboardContainer');  
+    const leaderboardBody = document.getElementById('leaderboardBody');  
+    const weekInfo = document.getElementById('weekInfo');  
+    const onlineIndicator = document.getElementById('onlineIndicator');  
+    const connectionStatus = document.getElementById('connectionStatus');  
+    const weeklyLimitInfo = document.getElementById('weeklyLimitInfo');  
+    const activeSideRight = document.getElementById('activeSideRight');
+    const activeSideLeft = document.getElementById('activeSideLeft');
+    const bubbleToggleBtn = document.getElementById('bubbleToggleBtn');
+    const floatBubble = document.getElementById('floatBubble');
+    const fbCount = document.getElementById('fbCount');
+    const fbClose = document.getElementById('fbClose');
+  
+    let current = 0, total = 0, personal = 0, personalSalawat = 0, cyclesThisSession = 0;  
+    let activeDhikr = "اللهم صل على محمد وآله وسلم", activeTarget = Infinity, isInfinite = true, addToTotal = true;  
+    let currentUser = "", isFirebaseReady = false;  
+    let isSyncingQueue = false;
+    let currentWeeklyRef = null;
+    let totalRef = null;
+    let leadRef = null;
+    let bubbleEnabled = false;
+    let bubbleDragging = false;
+    
+    let previousScores = {};
+    let isFirstLeadLoad = true;
+    let activeUsersTimers = {};
+
+    const PERSONAL_KEY = 'tasbeeh_personal_count';  
+    const PERSONAL_SALAWAT_KEY = 'tasbeeh_personal_salawat_count';  
+    const USER_KEY = 'tasbeeh_user_name';  
+    const BUBBLE_KEY = 'tasbeeh_bubble_enabled';  
+    const TOTAL_GOAL = 1000000000;  
+    const WEEKLY_MANUAL_LIMIT = 99999;  
+    let offlineQueue = [];  
+    let weeklyManualTotal = 0;  
+
+    function showToast(msg){ 
+      toast.textContent = msg; 
+      toast.classList.add('show'); 
+      setTimeout(() => toast.classList.remove('show'), 2200); 
+    }  
+
+    function getWeekNumber(){ 
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function getCurrentWeekKey(){ 
+      const d = new Date();
+      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+      return 'week_' + getWeekNumber() + '_' + d.getFullYear(); 
+    }  
+  
+    function buildBeads(n){  
+      beadsEl.innerHTML = '';  
+      if(n === 0 || isInfinite) n = 33;  
+      const cx = 50, cy = 50, r = 46;  
+      const count = Math.min(n, 100);  
+      for(let i = 0; i < count; i++){  
+        const angle = (i / count) * 2 * Math.PI - Math.PI / 2;  
+        const x = cx + r * Math.cos(angle), y = cy + r * Math.sin(angle);  
+        const b = document.createElement('div'); 
+        b.className = 'bead';  
+        b.style.left = x + '%'; 
+        b.style.top = y + '%'; 
+        beadsEl.appendChild(b);  
+      }  
+    }  
+
+    function updateBeads(){  
+      const beads = beadsEl.children;  
+      const limit = isInfinite ? beads.length : activeTarget;  
+      for(let i = 0; i < beads.length; i++){
+        beads[i].classList.toggle('filled', i < current && i < limit);
+      }  
+    }  
+
+    function renderGoal(){  
+      const pct = Math.min(100, (total / TOTAL_GOAL) * 100);  
+      goalFill.style.width = pct.toFixed(6) + '%';  
+      goalNote.textContent = total.toLocaleString('en-US') + ' / ' + TOTAL_GOAL.toLocaleString('en-US') + ' (' + pct.toFixed(6) + '%)';  
+    }  
+
+    function render(){  
+      tapCount.textContent = current;  
+      tapTarget.textContent = isInfinite ? '∞' : 'من ' + activeTarget;  
+      totalValue.textContent = total.toLocaleString('en-US');  
+      personalValue.textContent = personal.toLocaleString('en-US');  
+      personalSalawatValue.textContent = personalSalawat.toLocaleString('en-US');  
+      cyclesLabel.textContent = cyclesThisSession > 0 ? ('أكملت ' + cyclesThisSession + ' دورة') : '';  
+      updateBeads(); 
+      renderGoal();  
+      if(bubbleEnabled) fbCount.textContent = current;  
+    }  
+  
+    function vibrate(pattern){  
+      if(navigator.vibrate){  
+        try{ navigator.vibrate(pattern); }catch(e){}  
+      }  
+    }  
+  
+    function loadPersonal(){ 
+      try { 
+        personal = parseInt(localStorage.getItem(PERSONAL_KEY), 10) || 0; 
+        personalSalawat = parseInt(localStorage.getItem(PERSONAL_SALAWAT_KEY), 10) || 0; 
+      } catch(e){} 
+      render(); 
+    }  
+
+    function savePersonal(){ 
+      try { 
+        localStorage.setItem(PERSONAL_KEY, String(personal)); 
+        localStorage.setItem(PERSONAL_SALAWAT_KEY, String(personalSalawat)); 
+      } catch(e){} 
+    }  
+
+    function incrementPersonal(){ 
+      personal++; 
+      if(addToTotal) personalSalawat++;  
+      savePersonal(); 
+      personalValue.textContent = personal.toLocaleString('en-US'); 
+      personalSalawatValue.textContent = personalSalawat.toLocaleString('en-US'); 
+    }  
+  
+    function loadUserName(){  
+      try { 
+        const s = localStorage.getItem(USER_KEY); 
+        if(s){ 
+          currentUser = s; 
+          userNameInput.value = s; 
+          userNameDisplay.textContent = '👤 ' + s; 
+          userNameDisplay.style.display = 'inline-block'; 
+        } 
+      } catch(e){}  
+    }  
+
+    function sanitizeKey(str) {
+      return str.replace(/[.#$[\]/]/g, '_').trim();
+    }
+
+    function setUserName(){  
+      const name = sanitizeKey(userNameInput.value);  
+      if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }  
+      if(name.length > 20){ showToast('❌ الاسم طويل جداً'); return; }  
+      
+      currentUser = name; 
+      localStorage.setItem(USER_KEY, name);  
+      userNameDisplay.textContent = '👤 ' + name; 
+      userNameDisplay.style.display = 'inline-block';  
+      showToast('✅ تم حفظ الاسم: ' + name);  
+      
+      loadWeeklyManualTotal();
+      loadLeaderboardFromFirebase();
+      renderActiveUI();
+    }  
+  
+    function loadWeeklyManualTotal(){  
+      if(!currentUser) return;  
+      const weekKey = getCurrentWeekKey();  
+      
+      if(currentWeeklyRef) {
+        currentWeeklyRef.off();
+      }
+
+      if(isFirebaseReady) {
+        currentWeeklyRef = database.ref('weeklyManualAdditions/' + weekKey + '/' + currentUser);  
+        currentWeeklyRef.on('value', (snap) => {  
+          weeklyManualTotal = snap.val() || 0;  
+          setWeeklyManualTotalLocal(weeklyManualTotal);
+          updateWeeklyLimitDisplay();  
+        });  
+      } else {
+        weeklyManualTotal = getWeeklyManualTotalFromLocal();
+        updateWeeklyLimitDisplay();
+      }
+    }  
+  
+    function updateWeeklyLimitDisplay(){  
+      const remaining = Math.max(0, WEEKLY_MANUAL_LIMIT - weeklyManualTotal);  
+      weeklyLimitInfo.textContent = 'المتبقي هذا الأسبوع: ' + remaining.toLocaleString('en-US');  
+    }  
+  
+    function getWeeklyManualTotalFromLocal(){  
+      try {  
+        const key = 'weekly_manual_' + getCurrentWeekKey() + '_' + currentUser;  
+        return parseInt(localStorage.getItem(key), 10) || 0;  
+      } catch(e){ return 0; }  
+    }  
+  
+    function setWeeklyManualTotalLocal(value){  
+      try {  
+        const key = 'weekly_manual_' + getCurrentWeekKey() + '_' + currentUser;  
+        localStorage.setItem(key, String(value));  
+      } catch(e) {}  
+    }  
+  
+    function addManualCount(){  
+      if(!currentUser){ showToast('❌ سجّل اسمك أولاً'); return; }  
+      const val = parseInt(manualInput.value, 10);  
+      if(isNaN(val) || val <= 0){ showToast('❌ أدخل عدداً صحيحاً'); manualInput.value = ''; return; }  
+      if(val > 99999){ showToast('❌ الحد الأقصى 99,999 في المرة'); manualInput.value = ''; return; }  
+  
+      let currentTotal = weeklyManualTotal;  
+      if(currentTotal + val > WEEKLY_MANUAL_LIMIT){  
+        const remaining = Math.max(0, WEEKLY_MANUAL_LIMIT - currentTotal);  
+        showToast('❌ تجاوزت الحد الأسبوعي، المتبقي: ' + remaining.toLocaleString('en-US'));  
+        manualInput.value = '';  
+        return;  
+      }  
+  
+      if(isFirebaseReady){  
+        const weekKey = getCurrentWeekKey();  
+        const ref = database.ref('weeklyManualAdditions/' + weekKey + '/' + currentUser);  
+        ref.transaction((v) => (v || 0) + val, (error, committed) => {  
+          if(error) { showToast('❌ خطأ في الاتصال'); return; }  
+          if(committed){  
+            database.ref('totalCount').transaction((v) => (v || 0) + val);  
+            database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + val);  
+            personal += val;
+            personalSalawat += val;
+            savePersonal();
+            render();  
+            showToast('✅ تمت إضافة ' + val.toLocaleString('en-US'));  
+            manualInput.value = '';  
+          }  
+        });  
+      } else {  
+        const newTotal = currentTotal + val;  
+        setWeeklyManualTotalLocal(newTotal);  
+        weeklyManualTotal = newTotal;  
+        updateWeeklyLimitDisplay();  
+        saveToOfflineQueue('manualAdd', val, currentUser);  
+        total += val;  
+        personal += val;
+        personalSalawat += val;
+        savePersonal();
+        try { localStorage.setItem('offline_total', String(total)); } catch(e) {}  
+        render();  
+        showToast('📶 تم الحفظ محلياً (سيتم المزامنة تلقائياً)');  
+        manualInput.value = '';  
+      }  
+    }  
+  
+    function loadTotalFromFirebase(){  
+      if(totalRef) totalRef.off();
+      totalRef = database.ref('totalCount');  
+      totalRef.on('value', (snap) => {  
+        total = Number(snap.val()) || 0;  
+        try { localStorage.setItem('offline_total', String(total)); } catch(e) {}
+        render();  
+      });  
+    }  
+  
+    function syncOfflineQueue(){  
+      if(offlineQueue.length === 0 || !isFirebaseReady || isSyncingQueue) return;  
+      isSyncingQueue = true;
+      const queue = [...offlineQueue];  
+      offlineQueue = [];  
+      try { localStorage.removeItem('offline_queue'); } catch(e) {}  
+  
+      const weekKey = getCurrentWeekKey();
+      queue.forEach(item => {  
+        if (item.type === 'tap') {  
+          database.ref('totalCount').transaction((v) => (v || 0) + item.value);  
+          if (item.user) {
+            database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);
+          }
+        }  
+        else if (item.type === 'manualAdd' && item.user) {  
+          const ref = database.ref('weeklyManualAdditions/' + weekKey + '/' + item.user);  
+          ref.transaction((currentVal) => {  
+            const newVal = (currentVal || 0) + item.value;  
+            if(newVal > WEEKLY_MANUAL_LIMIT) return undefined;  
+            return newVal;  
+          }, (error, committed) => {  
+            if(committed){  
+              database.ref('totalCount').transaction((v) => (v || 0) + item.value);  
+              database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);  
+            }  
+          });  
+        }  
+      });  
+      isSyncingQueue = false;
+      if(queue.length > 0) showToast('✅ تمت مزامنة ' + queue.length + ' عملية معلقة');  
+    }  
+  
+    function saveToOfflineQueue(type, value, user){  
+      offlineQueue.push({type, value, user});  
+      try {  
+        localStorage.setItem('offline_queue', JSON.stringify(offlineQueue));  
+      } catch(e) {}  
+    }  
+
+    // إضافة المستخدم النشط وعرضه 6 ثوانٍ
+    function addActiveUser(userName){
+      if(activeUsersTimers[userName]){
+        clearTimeout(activeUsersTimers[userName]);
+      }
+      activeUsersTimers[userName] = setTimeout(() => {
+        delete activeUsersTimers[userName];
+        renderActiveUI();
+      }, 6000);
+      
+      renderActiveUI();
+    }
+
+    function renderActiveUI(){
+      const users = Object.keys(activeUsersTimers);
+      activeSideRight.innerHTML = '';
+      activeSideLeft.innerHTML = '';
+
+      users.slice(0, 4).forEach((userName, idx) => {
+        const pill = document.createElement('div');
+        pill.className = 'active-dhikr-pill';
+        pill.innerHTML = `📿 ${userName} <span>يصلي على النبي الآن</span>`;
+        if(idx % 2 === 0){
+          activeSideRight.appendChild(pill);
+        } else {
+          activeSideLeft.appendChild(pill);
+        }
+      });
+    }
+
+    function hitTotal(amount = 1){  
+      const weekKey = getCurrentWeekKey();
+      if(isFirebaseReady){  
+        database.ref('totalCount').transaction((v) => (v || 0) + amount);  
+        if(currentUser) {
+          database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + amount);
+        }
+      } else {  
+        saveToOfflineQueue('tap', amount, currentUser);  
+        total += amount;  
+        try { localStorage.setItem('offline_total', String(total)); } catch(e) {}  
+        render();  
+      }  
+    }  
+  
+    function loadLeaderboardFromFirebase(){  
+      const weekKey = getCurrentWeekKey();
+      if(leadRef) leadRef.off();
+      leadRef = database.ref('leaderboard/' + weekKey);
+      leadRef.on('value', (s) => {  
+        const data = s.val() || {}; 
+        
+        // اكتشاف من يسبح الآن من خلال زيادة رقمه في القائمة
+        if (!isFirstLeadLoad) {
+          Object.keys(data).forEach(user => {
+            const oldVal = previousScores[user] || 0;
+            const newVal = Number(data[user]) || 0;
+            if (newVal > oldVal && user !== currentUser) {
+              addActiveUser(user);
+            }
+          });
+        } else {
+          isFirstLeadLoad = false;
+        }
+
+        // حفظ الحالة السابقة للمقارنة في التحديث القادم
+        previousScores = {};
+        Object.keys(data).forEach(u => {
+          previousScores[u] = Number(data[u]) || 0;
+        });
+
+        // ترتيب وعرض القائمة
+        const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);  
+        weekInfo.textContent = '📅 الأسبوع ' + getWeekNumber() + ' - ' + new Date().getFullYear();  
+        
+        if(sorted.length === 0){ 
+          leaderboardBody.innerHTML = '<div class="leaderboard-empty">لا يوجد مشاركون هذا الأسبوع بعد</div>'; 
+          return; 
+        }  
+        let html = '';  
+        sorted.forEach(([name, count], idx) => {  
+          const isUser = name === currentUser;  
+          const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);  
+          html += '<div class="leaderboard-item" style="' + (isUser ? 'background:rgba(201,161,90,0.18);border-radius:6px;padding:4px 8px;margin:2px 0;' : 'padding:4px 8px;') + '">' +  
+            '<span><span class="lb-rank">' + medal + '</span> <span class="lb-name">' + name + (isUser ? ' ⭐' : '') + '</span></span>' +  
+            '<span class="lb-count">' + Number(count).toLocaleString('en-US') + '</span></div>';  
+        });  
+        leaderboardBody.innerHTML = html;  
+      }, () => {
+        leaderboardBody.innerHTML = '<div class="leaderboard-empty">تعذر جلب البيانات، تأكد من الاتصال بالإنترنت</div>';
+      });  
+    }  
+  
+    function toggleLeaderboard(){  
+      const isVisible = leaderboardContainer.style.display === 'block';  
+      leaderboardContainer.style.display = isVisible ? 'none' : 'block';  
+      if(!isVisible) {  
+        loadLeaderboardFromFirebase();  
+      }  
+    }  
+  
+    function tap(){  
+      if(!currentUser){ showToast('❌ سجّل اسمك أولاً في الأسفل'); return; }  
+      current++;  
+      vibrate(12);  
+        
+      if(!isInfinite && current >= activeTarget){  
+        cyclesThisSession++;  
+        vibrate([40,30,40,30,80]);  
+        showToast('✅ أتممت ' + activeTarget + ' – ' + activeDhikr);  
+        current = 0;  
+      }  
+      render();  
+      if(addToTotal){   
+        hitTotal(1);   
+      }  
+      incrementPersonal();  
+    }  
+  
+    function setDhikr(dhikr, target, addTotal){  
+      activeDhikr = dhikr; 
+      addToTotal = (addTotal === 'true'); 
+      isInfinite = (target === '∞');  
+      if(isInfinite){ 
+        activeTarget = Infinity; 
+        buildBeads(33); 
+      } else { 
+        activeTarget = parseInt(target, 10); 
+        buildBeads(activeTarget); 
+      }  
+      current = 0; 
+      render();  
+    }  
+
+    /* ====== الفقاعة العائمة داخل الصفحة ====== */
+    function loadBubblePref(){
+      try {
+        bubbleEnabled = localStorage.getItem(BUBBLE_KEY) === '1';
+      } catch(e){}
+      applyBubbleState();
+    }
+
+    function saveBubblePref(){
+      try { localStorage.setItem(BUBBLE_KEY, bubbleEnabled ? '1' : '0'); } catch(e){}
+    }
+
+    function applyBubbleState(){
+      if(bubbleEnabled){
+        floatBubble.classList.add('visible');
+        bubbleToggleBtn.textContent = '📿 إخفاء الفقاعة العائمة';
+        fbCount.textContent = current;
+      } else {
+        floatBubble.classList.remove('visible');
+        bubbleToggleBtn.textContent = '📿 تفعيل الفقاعة العائمة';
+      }
+    }
+
+    function toggleBubble(){
+      bubbleEnabled = !bubbleEnabled;
+      saveBubblePref();
+      applyBubbleState();
+      showToast(bubbleEnabled ? '✅ تم تفعيل الفقاعة العائمة' : '✖ تم إخفاء الفقاعة العائمة');
+    }
+
+    // سحب الفقاعة لأي مكان داخل الصفحة
+    function initBubbleDrag(){
+      let offsetX = 0, offsetY = 0, moved = false;
+
+      function pointerDown(e){
+        if(e.target === fbClose || fbClose.contains(e.target)) return; // اترك زر الإغلاق يعمل بشكل طبيعي (لمساً ونقراً) دون تدخل السحب/العدّ
+        bubbleDragging = true;
+        moved = false;
+        const point = e.touches ? e.touches[0] : e;
+        const rect = floatBubble.getBoundingClientRect();
+        offsetX = point.clientX - rect.left;
+        offsetY = point.clientY - rect.top;
+        floatBubble.style.right = 'auto';
+        floatBubble.style.bottom = 'auto';
+        floatBubble.style.left = rect.left + 'px';
+        floatBubble.style.top = rect.top + 'px';
+        e.preventDefault();
+      }
+
+      function pointerMove(e){
+        if(!bubbleDragging) return;
+        moved = true;
+        const point = e.touches ? e.touches[0] : e;
+        let x = point.clientX - offsetX;
+        let y = point.clientY - offsetY;
+        x = Math.max(4, Math.min(window.innerWidth - floatBubble.offsetWidth - 4, x));
+        y = Math.max(4, Math.min(window.innerHeight - floatBubble.offsetHeight - 4, y));
+        floatBubble.style.left = x + 'px';
+        floatBubble.style.top = y + 'px';
+      }
+
+      function pointerUp(){
+        if(bubbleDragging && !moved){
+          // كانت ضغطة وليست سحباً => تُحتسب كعدّ
+          tap();
+        }
+        bubbleDragging = false;
+      }
+
+      floatBubble.addEventListener('mousedown', pointerDown);
+      document.addEventListener('mousemove', pointerMove);
+      document.addEventListener('mouseup', pointerUp);
+
+      floatBubble.addEventListener('touchstart', pointerDown, {passive:false});
+      document.addEventListener('touchmove', pointerMove, {passive:false});
+      document.addEventListener('touchend', pointerUp);
+    }
+
+    /* ====== مفتاح رفع الصوت للعدّ (فقط والصفحة مفتوحة وظاهرة، غير مقفلة) ======
+       تنبيه واقعي: أغلب متصفحات الجوال (Chrome/Safari) تعترض ضغطات زر رفع الصوت
+       الفعلي على مستوى نظام التشغيل قبل أن تصل إلى الصفحة، فلن يستجيب هذا الكود
+       غالباً للزر الفيزيائي على أغلب الهواتف. يبقى فعّالاً على: لوحة مفاتيح خارجية
+       متصلة، بعض أجهزة أندرويد/متصفحات معينة تسمح بتمرير الحدث، أو متصفح الحاسوب. */
+    function initVolumeKeyCounter(){
+      document.addEventListener('keydown', (e) => {
+        if(document.hidden) return; // لا شيء يحدث إن كانت الصفحة غير ظاهرة (مثل قفل الشاشة أو تبديل التطبيق)
+        if(e.key === 'AudioVolumeUp' || e.key === 'VolumeUp'){
+          e.preventDefault();
+          tap();
+        }
+      });
+    }
+  
+    try {  
+      const savedQueue = localStorage.getItem('offline_queue');  
+      if(savedQueue) {  
+        offlineQueue = JSON.parse(savedQueue);  
+      }  
+    } catch(e) {}  
+
+    const connectedRef = database.ref('.info/connected');  
+    connectedRef.on('value', (snap) => {  
+      if (snap.val() === true) {  
+        isFirebaseReady = true;  
+        onlineIndicator.className = 'status-online';  
+        onlineIndicator.textContent = '●';  
+        connectionStatus.textContent = '● مباشر';  
+        connectionStatus.style.borderColor = '#4CAF50';  
+        connectionStatus.style.color = '#81C784';  
+        connectionStatus.style.background = 'rgba(76,175,80,0.15)';  
+        syncOfflineQueue();  
+        loadTotalFromFirebase();  
+        loadLeaderboardFromFirebase();
+        if(currentUser) {
+          loadWeeklyManualTotal();
+        }
+      } else {  
+        isFirebaseReady = false;  
+        onlineIndicator.className = 'status-offline';  
+        onlineIndicator.textContent = '○';  
+        connectionStatus.textContent = '⚠️ غير متصل';  
+        connectionStatus.style.borderColor = '#e57373';  
+        connectionStatus.style.color = '#e57373';  
+        connectionStatus.style.background = 'rgba(229,115,115,0.15)';  
+        
+        try {  
+          const saved = localStorage.getItem('offline_total');  
+          if (saved) {  
+            total = parseInt(saved, 10) || 0;  
+            render();  
+          }  
+        } catch(e) {}  
+        
+        if(currentUser){  
+          weeklyManualTotal = getWeeklyManualTotalFromLocal();  
+          updateWeeklyLimitDisplay();  
+        }  
+      }  
+    });  
+  
+    tapBtn.addEventListener('click', tap);  
+    resetBtn.addEventListener('click', () => { current = 0; render(); });  
+    personalResetBtn.addEventListener('click', () => {
+      if(!confirm('هل تريد تصفير العدّاد الفردي؟')) return; 
+      personal = 0; 
+      personalSalawat = 0; 
+      savePersonal(); 
+      render(); 
+    });  
+
+    targetBtn.addEventListener('click', () => {  
+      if(isInfinite){  
+        activeTarget = 33;  
+        isInfinite = false;  
+        buildBeads(33);  
+      } else if(activeTarget === 33){  
+        activeTarget = 100;  
+        buildBeads(100);  
+      } else if(activeTarget === 100){  
+        isInfinite = true;  
+        activeTarget = Infinity;  
+        buildBeads(33);  
+      }  
+      current = 0;  
+      render();  
+      showToast(isInfinite ? 'الهدف: ∞' : 'الهدف: ' + activeTarget);  
+    });  
+
+    dhikrSelect.addEventListener('click', (e) => {  
+      const chip = e.target.closest('.dhikr-chip'); 
+      if(!chip) return;  
+      [...dhikrSelect.children].forEach(c => c.classList.remove('active')); 
+      chip.classList.add('active');  
+      setDhikr(chip.dataset.dhikr, chip.dataset.target, chip.dataset.addTotal || 'false');  
+    });  
+
+    manualAddBtn.addEventListener('click', addManualCount);  
+    manualClearBtn.addEventListener('click', () => { manualInput.value = ''; });  
+    manualInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addManualCount(); } });  
+    manualInput.addEventListener('input', () => { 
+      if(manualInput.value.length > 5) manualInput.value = manualInput.value.slice(0, 5); 
+      if(parseInt(manualInput.value, 10) < 0) manualInput.value = ''; 
+    });  
+
+    setNameBtn.addEventListener('click', setUserName);  
+    userNameInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); setUserName(); } });  
+    toggleLeaderboardBtn.addEventListener('click', toggleLeaderboard);  
+
+    bubbleToggleBtn.addEventListener('click', toggleBubble);  
+    fbClose.addEventListener('click', (e) => { e.stopPropagation(); toggleBubble(); });  
+    initBubbleDrag();  
+    initVolumeKeyCounter();  
+  
+    setDhikr('اللهم صل على محمد وآله وسلم', '∞', 'true');  
+    loadPersonal();  
+    loadUserName();  
+    loadBubblePref();  
+    loadTotalFromFirebase();  
+    if(currentUser) loadWeeklyManualTotal();  
+    render();  
+      
+    try {  
+      const saved = localStorage.getItem('offline_total');  
+      if (saved) {  
+        total = parseInt(saved, 10) || 0;  
+        render();  
+      }  
+    } catch(e) {}  
+  })();  
+</script>  
+</body>  
+</html>
