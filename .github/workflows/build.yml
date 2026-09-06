@@ -7,26 +7,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
+    - uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
-
-    - name: Build with Gradle Wrapper
+    - name: Grant execute permission for gradlew
       run: |
-        gradle wrapper
-        chmod +x gradlew
-        ./gradlew assembleDebug
+        find . -name "gradlew" -exec chmod +x {} \;
 
-    - name: Upload APK Artifact
+    - name: Build with Gradle
+      run: |
+        if [ -f "./gradlew" ]; then
+          ./gradlew assembleDebug
+        elif [ -f "./app/gradlew" ]; then
+          cd app && ./gradlew assembleDebug
+        else
+          gradle assembleDebug
+        fi
+
+    - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: TasbeehApp-APK
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: |
+          app/build/outputs/apk/debug/app-debug.apk
+          **/build/outputs/apk/debug/app-debug.apk
+
