@@ -480,62 +480,6 @@
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* الفقاعة العائمة */
-  .float-bubble{
-    position:fixed;
-    width:64px;
-    height:64px;
-    border-radius:50%;
-    background: radial-gradient(circle at 35% 30%, #1C4A45, var(--night-deep) 70%);
-    border: 2px solid var(--gold);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 0 4px rgba(201,161,90,0.08);
-    display:none;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    color:var(--gold-soft);
-    z-index:50;
-    cursor:pointer;
-    user-select:none;
-    touch-action:none;
-    right:16px;
-    bottom:90px;
-  }
-  .float-bubble.visible{ display:flex; }
-  .float-bubble .fb-count{
-    font-family: serif;
-    font-weight:700;
-    font-size:1.15rem;
-    line-height:1;
-  }
-  .float-bubble .fb-label{
-    font-size:0.45rem;
-    color:var(--sage);
-    margin-top:2px;
-  }
-  .float-bubble .fb-close{
-    position:absolute;
-    top:-6px;
-    left:-6px;
-    width:18px;
-    height:18px;
-    border-radius:50%;
-    background:var(--night-deep);
-    border:1px solid var(--gold);
-    color:var(--cream);
-    font-size:0.6rem;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-  }
-  .bubble-toggle-row{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin-top:8px;
-  }
-
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
   ::-webkit-scrollbar{ width:3px; }
   ::-webkit-scrollbar-track{ background:transparent; }
@@ -573,7 +517,7 @@
     <div class="active-side-container left" id="activeSideLeft"></div>
   </div>
 
-  <div class="tap-hint">👆 اضغط للعدّ (أو زر رفع الصوت والصفحة مفتوحة)</div>
+  <div class="tap-hint">👆 اضغط للعدّ</div>
   <div class="cycles" id="cyclesLabel"></div>
 
   <div class="controls">
@@ -612,7 +556,7 @@
       <button class="btn success" id="manualAddBtn">➕ إضافة</button>
       <button class="btn danger" id="manualClearBtn">✖</button>
     </div>
-    <div class="weekly-limit-info" id="weeklyLimitInfo">المتبقي هذا الأسبوع: 99,999</div>
+    <div class="weekly-limit-info" id="weeklyLimitInfo">المتبقي لهذا الأسبوع: 99,999</div>
 
     <div class="name-input-area">
       <input type="text" id="userNameInput" placeholder="✏️ أدخل اسمك" maxlength="20">
@@ -621,7 +565,7 @@
     </div>
 
     <div class="leaderboard-bar">
-      <button class="btn info" id="toggleLeaderboardBtn" style="font-size:0.75rem;padding:6px 14px;">🏆 قائمة الأوائل لهذا الأسبوع</button>
+      <button class="btn info" id="toggleLeaderboardBtn" style="font-size:0.75rem;padding:6px 14px;">🏆 الأوائل في هذا الأسبوع هم...</button>
       <span class="live-badge" id="connectionStatus">● جاري الاتصال...</span>
     </div>
 
@@ -632,20 +576,9 @@
         <div id="leaderboardBody"></div>
       </div>
     </div>
-
-    <div class="bubble-toggle-row">
-      <button class="btn gold" id="bubbleToggleBtn">📿 تفعيل الفقاعة العائمة</button>
-    </div>
   </div>
 
   <footer>📌 العدّاد الفردي خاص بك | 📿 عدّاد الصلاة على النبي ﷺ وقائمة الأوائل مشتركة وتُحدّث لحظياً<br>🗓️ الأسبوع في قائمة الأوائل يبدأ السبت وينتهي الجمعة</footer>
-</div>
-
-<!-- الفقاعة العائمة داخل الصفحة -->
-<div class="float-bubble" id="floatBubble">
-  <div class="fb-close" id="fbClose">✖</div>
-  <div class="fb-count" id="fbCount">0</div>
-  <div class="fb-label">📿 صلِّ</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -696,10 +629,6 @@
     const weeklyLimitInfo = document.getElementById('weeklyLimitInfo');
     const activeSideRight = document.getElementById('activeSideRight');
     const activeSideLeft = document.getElementById('activeSideLeft');
-    const bubbleToggleBtn = document.getElementById('bubbleToggleBtn');
-    const floatBubble = document.getElementById('floatBubble');
-    const fbCount = document.getElementById('fbCount');
-    const fbClose = document.getElementById('fbClose');
 
     let current = 0, total = 0, personal = 0, personalSalawat = 0, cyclesThisSession = 0;
     let activeDhikr = "اللهم صل على محمد وآله وسلم", activeTarget = Infinity, isInfinite = true, addToTotal = true;
@@ -708,8 +637,6 @@
     let currentWeeklyRef = null;
     let totalRef = null;
     let leadRef = null;
-    let bubbleEnabled = false;
-    let bubbleDragging = false;
 
     let previousScores = {};
     let isFirstLeadLoad = true;
@@ -718,7 +645,6 @@
     const PERSONAL_KEY = 'tasbeeh_personal_count';
     const PERSONAL_SALAWAT_KEY = 'tasbeeh_personal_salawat_count';
     const USER_KEY = 'tasbeeh_user_name';
-    const BUBBLE_KEY = 'tasbeeh_bubble_enabled';
     const TOTAL_GOAL = 1000000000;
     const WEEKLY_MANUAL_LIMIT = 99999;
     let offlineQueue = [];
@@ -800,7 +726,7 @@
       cyclesLabel.textContent = cyclesThisSession > 0 ? ('أكملت ' + cyclesThisSession + ' دورة') : '';
       updateBeads();
       renderGoal();
-      if(bubbleEnabled) fbCount.textContent = current;
+      if(window.AndroidBridge){ AndroidBridge.updateCount(current); }
     }
 
     function vibrate(pattern){
@@ -887,7 +813,7 @@
 
     function updateWeeklyLimitDisplay(){
       const remaining = Math.max(0, WEEKLY_MANUAL_LIMIT - weeklyManualTotal);
-      weeklyLimitInfo.textContent = 'المتبقي هذا الأسبوع: ' + remaining.toLocaleString('en-US');
+      weeklyLimitInfo.textContent = 'المتبقي لهذا الأسبوع: ' + remaining.toLocaleString('en-US');
     }
 
     function getWeeklyManualTotalFromLocal(){
@@ -1140,93 +1066,6 @@
       render();
     }
 
-    /* ====== الفقاعة العائمة داخل الصفحة ====== */
-    function loadBubblePref(){
-      try {
-        bubbleEnabled = localStorage.getItem(BUBBLE_KEY) === '1';
-      } catch(e){}
-      applyBubbleState();
-    }
-
-    function saveBubblePref(){
-      try { localStorage.setItem(BUBBLE_KEY, bubbleEnabled ? '1' : '0'); } catch(e){}
-    }
-
-    function applyBubbleState(){
-      if(bubbleEnabled){
-        floatBubble.classList.add('visible');
-        bubbleToggleBtn.textContent = '📿 إخفاء الفقاعة العائمة';
-        fbCount.textContent = current;
-      } else {
-        floatBubble.classList.remove('visible');
-        bubbleToggleBtn.textContent = '📿 تفعيل الفقاعة العائمة';
-      }
-    }
-
-    function toggleBubble(){
-      bubbleEnabled = !bubbleEnabled;
-      saveBubblePref();
-      applyBubbleState();
-      showToast(bubbleEnabled ? '✅ تم تفعيل الفقاعة العائمة' : '✖ تم إخفاء الفقاعة العائمة');
-    }
-
-    // سحب الفقاعة لأي مكان داخل الصفحة
-    function initBubbleDrag(){
-      let offsetX = 0, offsetY = 0, moved = false;
-
-      function pointerDown(e){
-        if(e.target === fbClose || fbClose.contains(e.target)) return;
-        bubbleDragging = true;
-        moved = false;
-        const point = e.touches ? e.touches[0] : e;
-        const rect = floatBubble.getBoundingClientRect();
-        offsetX = point.clientX - rect.left;
-        offsetY = point.clientY - rect.top;
-        floatBubble.style.right = 'auto';
-        floatBubble.style.bottom = 'auto';
-        floatBubble.style.left = rect.left + 'px';
-        floatBubble.style.top = rect.top + 'px';
-        e.preventDefault();
-      }
-
-      function pointerMove(e){
-        if(!bubbleDragging) return;
-        moved = true;
-        const point = e.touches ? e.touches[0] : e;
-        let x = point.clientX - offsetX;
-        let y = point.clientY - offsetY;
-        x = Math.max(4, Math.min(window.innerWidth - floatBubble.offsetWidth - 4, x));
-        y = Math.max(4, Math.min(window.innerHeight - floatBubble.offsetHeight - 4, y));
-        floatBubble.style.left = x + 'px';
-        floatBubble.style.top = y + 'px';
-      }
-
-      function pointerUp(){
-        if(bubbleDragging && !moved){
-          tap();
-        }
-        bubbleDragging = false;
-      }
-
-      floatBubble.addEventListener('mousedown', pointerDown);
-      document.addEventListener('mousemove', pointerMove);
-      document.addEventListener('mouseup', pointerUp);
-
-      floatBubble.addEventListener('touchstart', pointerDown, {passive:false});
-      document.addEventListener('touchmove', pointerMove, {passive:false});
-      document.addEventListener('touchend', pointerUp);
-    }
-
-    function initVolumeKeyCounter(){
-      document.addEventListener('keydown', (e) => {
-        if(document.hidden) return;
-        if(e.key === 'AudioVolumeUp' || e.key === 'VolumeUp'){
-          e.preventDefault();
-          tap();
-        }
-      });
-    }
-
     try {
       const savedQueue = localStorage.getItem('offline_queue');
       if(savedQueue) {
@@ -1322,15 +1161,9 @@
     userNameInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); setUserName(); } });
     toggleLeaderboardBtn.addEventListener('click', toggleLeaderboard);
 
-    bubbleToggleBtn.addEventListener('click', toggleBubble);
-    fbClose.addEventListener('click', (e) => { e.stopPropagation(); toggleBubble(); });
-    initBubbleDrag();
-    initVolumeKeyCounter();
-
     setDhikr('اللهم صل على محمد وآله وسلم', '∞', 'true');
     loadPersonal();
     loadUserName();
-    loadBubblePref();
     loadTotalFromFirebase();
     if(currentUser) loadWeeklyManualTotal();
     render();
@@ -1342,7 +1175,9 @@
         render();
       }
     } catch(e) {}
+
+    window.androidTap = tap;
   })();
 </script>
 </body>
-  </html>
+      </html>
