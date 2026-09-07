@@ -149,7 +149,6 @@
     color:var(--gold-soft);
   }
 
-  /* الحاوية المركزية للعداد وجانبي الأسماء */
   .counter-wrapper {
     position: relative;
     width: 100%;
@@ -230,7 +229,6 @@
     text-align:center;
   }
 
-  /* حاويات النشاط المباشر على الجانبين من الأسفل */
   .active-side-container {
     width: 90px;
     display: flex;
@@ -502,7 +500,6 @@
   </div>
 
   <div class="counter-wrapper">
-    <!-- حاوية الجانب الأيمن (أسفل يمين الدائرة) -->
     <div class="active-side-container right" id="activeSideRight"></div>
 
     <div class="counter-zone">
@@ -513,7 +510,6 @@
       </div>
     </div>
 
-    <!-- حاوية الجانب الأيسر (أسفل يسار الدائرة) -->
     <div class="active-side-container left" id="activeSideLeft"></div>
   </div>
 
@@ -523,6 +519,7 @@
   <div class="controls">
     <button class="btn" id="targetBtn">تغيير الهدف</button>
     <button class="btn danger" id="resetBtn">🔄 تصفير</button>
+    <button class="btn gold" id="bubbleToggleBtn">📿 الفقاعة العائمة</button>
   </div>
 
   <div class="total-card">
@@ -629,6 +626,7 @@
     const weeklyLimitInfo = document.getElementById('weeklyLimitInfo');
     const activeSideRight = document.getElementById('activeSideRight');
     const activeSideLeft = document.getElementById('activeSideLeft');
+    const bubbleToggleBtn = document.getElementById('bubbleToggleBtn');
 
     let current = 0, total = 0, personal = 0, personalSalawat = 0, cyclesThisSession = 0;
     let activeDhikr = "اللهم صل على محمد وآله وسلم", activeTarget = Infinity, isInfinite = true, addToTotal = true;
@@ -656,12 +654,11 @@
       setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
-    /* ====== حساب الأسبوع: يبدأ السبت وينتهي الجمعة ====== */
     function getWeekStartSaturday(date = new Date()){
       const d = new Date(date);
       d.setHours(0, 0, 0, 0);
-      const day = d.getDay(); // الأحد=0, الاثنين=1 ... الجمعة=5, السبت=6
-      const diff = (day + 1) % 7; // عدد الأيام المنقضية منذ آخر يوم سبت
+      const day = d.getDay();
+      const diff = (day + 1) % 7;
       d.setDate(d.getDate() - diff);
       return d;
     }
@@ -927,7 +924,6 @@
       } catch(e) {}
     }
 
-    // إضافة المستخدم النشط وعرضه 6 ثوانٍ
     function addActiveUser(userName){
       if(activeUsersTimers[userName]){
         clearTimeout(activeUsersTimers[userName]);
@@ -979,7 +975,6 @@
       leadRef.on('value', (s) => {
         const data = s.val() || {};
 
-        // اكتشاف من يسبح الآن من خلال زيادة رقمه في القائمة
         if (!isFirstLeadLoad) {
           Object.keys(data).forEach(user => {
             const oldVal = previousScores[user] || 0;
@@ -992,13 +987,11 @@
           isFirstLeadLoad = false;
         }
 
-        // حفظ الحالة السابقة للمقارنة في التحديث القادم
         previousScores = {};
         Object.keys(data).forEach(u => {
           previousScores[u] = Number(data[u]) || 0;
         });
 
-        // ترتيب وعرض القائمة
         const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
 
         const satStart = getWeekStartSaturday();
@@ -1065,6 +1058,11 @@
       current = 0;
       render();
     }
+
+    bubbleToggleBtn.addEventListener('click', () => {
+      if(window.AndroidBridge){ AndroidBridge.toggleBubble(); }
+      else { showToast('❌ غير متاح خارج التطبيق'); }
+    });
 
     try {
       const savedQueue = localStorage.getItem('offline_queue');
@@ -1180,4 +1178,4 @@
   })();
 </script>
 </body>
-      </html>
+</html>
