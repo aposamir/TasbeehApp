@@ -6,12 +6,12 @@
 
     <TextView
         android:id="@+id/bubble_counter"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
         android:background="@drawable/circle_background"
         android:text="0"
         android:textColor="#C9A15A"
-        android:textSize="20sp"
+        android:textSize="40sp"
         android:textStyle="bold"
         android:gravity="center"
         android:elevation="8dp" />
