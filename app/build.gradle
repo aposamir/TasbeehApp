@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.tasbeehapp'
+    namespace 'com.aposamir.tasbeehapp'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.tasbeehapp"
+        applicationId "com.aposamir.tasbeehapp"
         minSdk 21
         targetSdk 34
         versionCode 1
