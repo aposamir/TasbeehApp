@@ -1,4 +1,4 @@
-name: Build Android APK
+        name: Build Android APK
 
 on:
   push:
@@ -15,6 +15,15 @@ jobs:
 
       - name: Decode debug keystore
         run: base64 -d app/debug.keystore.base64 > app/debug.keystore
+
+      - name: Decode icon
+        run: |
+          base64 -d app/icon.base64.txt > app/icon_temp.png
+          for dir in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p app/src/main/res/mipmap-$dir
+            cp app/icon_temp.png app/src/main/res/mipmap-$dir/ic_launcher.png
+            cp app/icon_temp.png app/src/main/res/mipmap-$dir/ic_launcher_round.png
+          done
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -34,4 +43,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TasbeehApp
-          path: app/build/outputs/apk/debug/
+          path: app/build/outputs/apk/debug/  path: app/build/outputs/apk/debug/
