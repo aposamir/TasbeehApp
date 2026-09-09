@@ -1,18 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:padding="8dp">
 
-    <TextView
+    <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/bubble_counter"
         android:layout_width="128dp"
         android:layout_height="128dp"
         android:background="@drawable/circle_background"
         android:text="0"
         android:textColor="#C9A15A"
-        android:textSize="40sp"
         android:textStyle="bold"
         android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="none"
+        app:autoSizeTextType="uniform"
+        app:autoSizeMinTextSize="12sp"
+        app:autoSizeMaxTextSize="40sp"
+        app:autoSizeStepGranularity="1sp"
         android:elevation="8dp" />
 </FrameLayout>
