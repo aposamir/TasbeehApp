@@ -35,8 +35,3 @@ jobs:
         with:
           name: TasbeehApp
           path: app/build/outputs/apk/debug/
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TasbeehApp
-          path: app/build/outputs/apk/debug/
