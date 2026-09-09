@@ -478,6 +478,27 @@
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
+  .in-app-bubble{
+    position:fixed;
+    left: 16px; top: 90px;
+    width:45px; height:45px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #1C4A45, var(--night-deep) 70%);
+    border:2px solid var(--gold);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 0 4px rgba(201,161,90,0.08);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--gold-soft);
+    font-family: serif;
+    font-weight:700;
+    font-size:0.9rem;
+    z-index:9999;
+    cursor:pointer;
+    user-select:none;
+    touch-action:none;
+  }
+
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
   ::-webkit-scrollbar{ width:3px; }
   ::-webkit-scrollbar-track{ background:transparent; }
@@ -519,7 +540,8 @@
   <div class="controls">
     <button class="btn" id="targetBtn">تغيير الهدف</button>
     <button class="btn danger" id="resetBtn">🔄 تصفير</button>
-    <button class="btn gold" id="bubbleToggleBtn">📿 الفقاعة العائمة</button>
+    <button class="btn gold" id="enableBubbleBtn">📿 تفعيل الفقاعة</button>
+    <button class="btn danger" id="disableBubbleBtn" style="display:none;">🚫 اخفاء الفقاعة</button>
   </div>
 
   <div class="total-card">
@@ -548,8 +570,8 @@
     </div>
 
     <div class="manual-input-area">
-      <div class="manual-label">➕ أضف صلوات (حد أقصى 99,999 في الأسبوع)</div>
-      <input type="number" id="manualInput" min="1" max="99999" placeholder="0">
+      <div class="manual-label">➕ لإضافة عدد الصلوات الخارجية (حد أقصى 99,999 في الأسبوع)</div>
+      <input type="number" id="manualInput" min="1" max="99999" maxlength="5" inputmode="numeric" placeholder="0">
       <button class="btn success" id="manualAddBtn">➕ إضافة</button>
       <button class="btn danger" id="manualClearBtn">✖</button>
     </div>
@@ -579,6 +601,10 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div id="inAppBubble" class="in-app-bubble" style="display:none;">
+  <span id="inAppBubbleCount">0</span>
+</div>
 
 <script>
   const firebaseConfig = {
@@ -626,11 +652,22 @@
     const weeklyLimitInfo = document.getElementById('weeklyLimitInfo');
     const activeSideRight = document.getElementById('activeSideRight');
     const activeSideLeft = document.getElementById('activeSideLeft');
-    const bubbleToggleBtn = document.getElementById('bubbleToggleBtn');
+    const enableBubbleBtn = document.getElementById('enableBubbleBtn');
+    const disableBubbleBtn = document.getElementById('disableBubbleBtn');
+    const inAppBubbleEl = document.getElementById('inAppBubble');
+    const inAppBubbleCountEl = document.getElementById('inAppBubbleCount');
 
     let current = 0, total = 0, personal = 0, personalSalawat = 0, cyclesThisSession = 0;
     let activeDhikr = "اللهم صل على محمد وآله وسلم", activeTarget = Infinity, isInfinite = true, addToTotal = true;
     let currentUser = "", isFirebaseReady = false;
+    let bubbleEnabled = false;
+    let bubbleType = ''; // 'native' فوق التطبيقات | 'inapp' داخل التطبيق
+    let deviceId = "";
+    let pendingNameForCollisionCheck = null;
+    const BUBBLE_SIZE_SCALE = 0.8; // تصغير الفقاعة بمقدار 20%
+    const DEVICE_ID_KEY = 'tasbeeh_device_id';
+    const BUBBLE_STATE_KEY = 'tasbeeh_bubble_enabled';
+    const BUBBLE_TYPE_KEY = 'tasbeeh_bubble_type';
     let isSyncingQueue = false;
     let currentWeeklyRef = null;
     let totalRef = null;
@@ -652,6 +689,136 @@
       toast.textContent = msg;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function getOrCreateDeviceId(){
+      try {
+        let id = localStorage.getItem(DEVICE_ID_KEY);
+        if(!id){
+          id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+          localStorage.setItem(DEVICE_ID_KEY, id);
+        }
+        return id;
+      } catch(e){
+        return 'dev_' + Date.now().toString(36);
+      }
+    }
+
+    function updateBubbleButtons(){
+      enableBubbleBtn.style.display = bubbleEnabled ? 'none' : 'inline-block';
+      disableBubbleBtn.style.display = bubbleEnabled ? 'inline-block' : 'none';
+    }
+
+    function loadBubbleState(){
+      try {
+        bubbleEnabled = localStorage.getItem(BUBBLE_STATE_KEY) === '1';
+        bubbleType = localStorage.getItem(BUBBLE_TYPE_KEY) || '';
+      } catch(e){ bubbleEnabled = false; bubbleType = ''; }
+
+      // فقاعة "داخل التطبيق" عنصر ضمن الصفحة، تُهدم تلقائياً عند إعادة تحميل الصفحة،
+      // فلا يصح اعتبارها ما زالت ظاهرة بعد إعادة التحميل
+      if(bubbleEnabled && bubbleType === 'inapp'){
+        bubbleEnabled = false; bubbleType = ''; saveBubbleState();
+      }
+      // فقاعة "فوق التطبيقات" تعتمد على جسر أندرويد فعلي؛ إن لم يعد موجوداً فالحالة غير صحيحة
+      if(bubbleEnabled && bubbleType === 'native' && !window.AndroidBridge){
+        bubbleEnabled = false; bubbleType = ''; saveBubbleState();
+      }
+      updateBubbleButtons();
+    }
+
+    function saveBubbleState(){
+      try {
+        localStorage.setItem(BUBBLE_STATE_KEY, bubbleEnabled ? '1' : '0');
+        localStorage.setItem(BUBBLE_TYPE_KEY, bubbleType || '');
+      } catch(e) {}
+    }
+
+    function showInAppBubbleUI(){
+      const size = Math.round(45 * (BUBBLE_SIZE_SCALE / 0.8)); // 45px هو الحجم المصغّر أصلاً بمقدار 20%
+      inAppBubbleEl.style.width = size + 'px';
+      inAppBubbleEl.style.height = size + 'px';
+      inAppBubbleEl.style.fontSize = Math.max(11, Math.round(size * 0.32)) + 'px';
+      inAppBubbleCountEl.textContent = current;
+      inAppBubbleEl.style.display = 'flex';
+    }
+
+    function hideInAppBubbleUI(){
+      inAppBubbleEl.style.display = 'none';
+    }
+
+    let bubbleDragging = false, bubbleDragMoved = false, bubbleDragOffsetX = 0, bubbleDragOffsetY = 0;
+    inAppBubbleEl.addEventListener('pointerdown', (e) => {
+      bubbleDragging = true;
+      bubbleDragMoved = false;
+      const rect = inAppBubbleEl.getBoundingClientRect();
+      bubbleDragOffsetX = e.clientX - rect.left;
+      bubbleDragOffsetY = e.clientY - rect.top;
+      try { inAppBubbleEl.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    inAppBubbleEl.addEventListener('pointermove', (e) => {
+      if(!bubbleDragging) return;
+      bubbleDragMoved = true;
+      let x = e.clientX - bubbleDragOffsetX;
+      let y = e.clientY - bubbleDragOffsetY;
+      x = Math.max(0, Math.min(window.innerWidth - inAppBubbleEl.offsetWidth, x));
+      y = Math.max(0, Math.min(window.innerHeight - inAppBubbleEl.offsetHeight, y));
+      inAppBubbleEl.style.left = x + 'px';
+      inAppBubbleEl.style.top = y + 'px';
+    });
+    inAppBubbleEl.addEventListener('pointerup', () => {
+      bubbleDragging = false;
+      if(!bubbleDragMoved){
+        tap(); // نقرة بلا سحب على الفقاعة تُحتسب كضغطة عدّ
+      }
+    });
+
+    // العقد المتوقع مع تطبيق الأندرويد المضيف (AndroidBridge) لتشغيل الفقاعة فوق جميع التطبيقات:
+    //  - AndroidBridge.hasOverlayPermission() -> boolean : هل إذن "العرض فوق التطبيقات" ممنوح؟
+    //  - AndroidBridge.requestOverlayPermission() : يطلب هذا الإذن من المستخدم
+    //  - AndroidBridge.showOverlayBubble(scale) : يعرض الفقاعة فوق جميع التطبيقات بحجم مصغّر (scale)
+    //  - AndroidBridge.hideBubble() : يخفي الفقاعة الأصلية
+    // إن لم توجد هذه الدوال (كما في متصفح الاختبار الآن) تُستخدم فقاعة داخل الصفحة تلقائياً.
+    function enableBubble(){
+      const hasPermFn = window.AndroidBridge && typeof AndroidBridge.hasOverlayPermission === 'function';
+      const hasPermission = hasPermFn ? !!AndroidBridge.hasOverlayPermission() : false;
+
+      if(window.AndroidBridge && hasPermission && typeof AndroidBridge.showOverlayBubble === 'function'){
+        AndroidBridge.showOverlayBubble(BUBBLE_SIZE_SCALE);
+        bubbleType = 'native';
+        showToast('📿 تم تفعيل الفقاعة فوق جميع التطبيقات');
+      } else {
+        showInAppBubbleUI();
+        bubbleType = 'inapp';
+        if(window.AndroidBridge && !hasPermission){
+          showToast('📿 تم تفعيل الفقاعة داخل التطبيق (لا يوجد إذن العرض فوق التطبيقات)');
+          if(typeof AndroidBridge.requestOverlayPermission === 'function'){
+            AndroidBridge.requestOverlayPermission();
+          }
+        } else {
+          showToast('📿 تم تفعيل الفقاعة داخل التطبيق');
+        }
+      }
+      bubbleEnabled = true;
+      saveBubbleState();
+      updateBubbleButtons();
+    }
+
+    function disableBubble(){
+      if(bubbleType === 'native' && window.AndroidBridge){
+        if(typeof AndroidBridge.hideBubble === 'function'){
+          AndroidBridge.hideBubble();
+        } else if(typeof AndroidBridge.toggleBubble === 'function'){
+          AndroidBridge.toggleBubble();
+        }
+      } else {
+        hideInAppBubbleUI();
+      }
+      bubbleEnabled = false;
+      bubbleType = '';
+      saveBubbleState();
+      updateBubbleButtons();
+      showToast('🚫 تم إخفاء الفقاعة');
     }
 
     function getWeekStartSaturday(date = new Date()){
@@ -723,6 +890,7 @@
       cyclesLabel.textContent = cyclesThisSession > 0 ? ('أكملت ' + cyclesThisSession + ' دورة') : '';
       updateBeads();
       renderGoal();
+      if(bubbleEnabled && bubbleType === 'inapp'){ inAppBubbleCountEl.textContent = current; }
       if(window.AndroidBridge){ AndroidBridge.updateCount(current); }
     }
 
@@ -771,20 +939,60 @@
       return str.replace(/[.#$[\]/]/g, '_').trim();
     }
 
-    function setUserName(){
-      const name = sanitizeKey(userNameInput.value);
-      if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }
-      if(name.length > 20){ showToast('❌ الاسم طويل جداً'); return; }
-
+    function finalizeSetUserName(name){
       currentUser = name;
       localStorage.setItem(USER_KEY, name);
       userNameDisplay.textContent = '👤 ' + name;
       userNameDisplay.style.display = 'inline-block';
       showToast('✅ تم حفظ الاسم: ' + name);
 
+      if(isFirebaseReady && deviceId){
+        database.ref('nameOwners/' + name + '/devices/' + deviceId).set(true);
+        database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
+      }
+
       loadWeeklyManualTotal();
       loadLeaderboardFromFirebase();
       renderActiveUI();
+    }
+
+    function setUserName(){
+      const name = sanitizeKey(userNameInput.value);
+      if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }
+      if(name.length > 20){ showToast('❌ الاسم طويل جداً'); return; }
+
+      if(!isFirebaseReady || !deviceId){
+        finalizeSetUserName(name);
+        pendingNameForCollisionCheck = name;
+        return;
+      }
+
+      checkNameCollisionAndSave(name);
+    }
+
+    function checkNameCollisionAndSave(name){
+      database.ref('nameOwners/' + name + '/devices').once('value', (snap) => {
+        const devices = snap.val() || {};
+        const knownDeviceIds = Object.keys(devices);
+        const isNewDeviceForThisName = knownDeviceIds.length > 0 && !devices[deviceId];
+
+        if(isNewDeviceForThisName){
+          const ok = confirm(
+            '⚠️ هذا الاسم "' + name + '" مستخدم مسبقاً من جهاز آخر.\n' +
+            'إن كان هذا فعلاً أنت وتستخدم جهازاً جديداً، اضغط "موافق" للمتابعة، وسيتم ربط هذا الجهاز بنفس الاسم والرصيد الأسبوعي المشترك.\n' +
+            'إن لم يكن هذا أنت، اضغط "إلغاء" واختر اسماً مختلفاً لتفادي تداخل العدّ مع شخص آخر.'
+          );
+          if(!ok){
+            showToast('❌ تم إلغاء الحفظ، جرّب اسماً مختلفاً');
+            return;
+          }
+        }
+        finalizeSetUserName(name);
+        pendingNameForCollisionCheck = null;
+      }, () => {
+        finalizeSetUserName(name);
+        pendingNameForCollisionCheck = null;
+      });
     }
 
     function loadWeeklyManualTotal(){
@@ -1031,11 +1239,11 @@
       current++;
       vibrate(12);
 
-      if(!isInfinite && current >= activeTarget){
+      if(!isInfinite && current % activeTarget === 0){
         cyclesThisSession++;
         vibrate([40,30,40,30,80]);
         showToast('✅ أتممت ' + activeTarget + ' – ' + activeDhikr);
-        current = 0;
+        // لا يُصفَّر العداد تلقائياً؛ يستمر العدّ حتى يُطلب التصفير يدوياً
       }
       render();
       if(addToTotal){
@@ -1059,10 +1267,8 @@
       render();
     }
 
-    bubbleToggleBtn.addEventListener('click', () => {
-      if(window.AndroidBridge){ AndroidBridge.toggleBubble(); }
-      else { showToast('❌ غير متاح خارج التطبيق'); }
-    });
+    enableBubbleBtn.addEventListener('click', enableBubble);
+    disableBubbleBtn.addEventListener('click', disableBubble);
 
     try {
       const savedQueue = localStorage.getItem('offline_queue');
@@ -1086,6 +1292,12 @@
         loadLeaderboardFromFirebase();
         if(currentUser) {
           loadWeeklyManualTotal();
+        }
+        if(pendingNameForCollisionCheck && deviceId){
+          const nameToLink = pendingNameForCollisionCheck;
+          pendingNameForCollisionCheck = null;
+          database.ref('nameOwners/' + nameToLink + '/devices/' + deviceId).set(true);
+          database.ref('nameOwners/' + nameToLink + '/lastActive').set(Date.now());
         }
       } else {
         isFirebaseReady = false;
@@ -1112,7 +1324,11 @@
     });
 
     tapBtn.addEventListener('click', tap);
-    resetBtn.addEventListener('click', () => { current = 0; render(); });
+    resetBtn.addEventListener('click', () => {
+      current = 0;
+      cyclesThisSession = 0;
+      render();
+    });
     personalResetBtn.addEventListener('click', () => {
       if(!confirm('هل تريد تصفير العدّاد الفردي؟')) return;
       personal = 0;
@@ -1151,17 +1367,20 @@
     manualClearBtn.addEventListener('click', () => { manualInput.value = ''; });
     manualInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addManualCount(); } });
     manualInput.addEventListener('input', () => {
-      if(manualInput.value.length > 5) manualInput.value = manualInput.value.slice(0, 5);
-      if(parseInt(manualInput.value, 10) < 0) manualInput.value = '';
+      let v = manualInput.value.replace(/[^0-9]/g, '');
+      if(v.length > 5) v = v.slice(0, 5);
+      manualInput.value = v;
     });
 
     setNameBtn.addEventListener('click', setUserName);
     userNameInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); setUserName(); } });
     toggleLeaderboardBtn.addEventListener('click', toggleLeaderboard);
 
+    deviceId = getOrCreateDeviceId();
     setDhikr('اللهم صل على محمد وآله وسلم', '∞', 'true');
     loadPersonal();
     loadUserName();
+    loadBubbleState();
     loadTotalFromFirebase();
     if(currentUser) loadWeeklyManualTotal();
     render();
