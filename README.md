@@ -1,3 +1,2 @@
 # TasbeehApp
-TasbeehApp
-تحديث بسيط.
+TasbeehApp 
