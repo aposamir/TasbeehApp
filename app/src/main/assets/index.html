@@ -560,6 +560,7 @@
     <button class="btn" id="targetBtn">تغيير الهدف</button>
     <button class="btn danger" id="resetBtn">🔄 تصفير</button>
     <button class="btn gold" id="bubbleToggleBtn">📿 تفعيل الفقاعة</button>
+    <button class="btn danger" id="bubbleResetBtn">🔄 تصفير الفقاعة</button>
   </div>
 
   <div class="total-card">
@@ -681,6 +682,7 @@
     const activeSideRight = document.getElementById('activeSideRight');
     const activeSideLeft = document.getElementById('activeSideLeft');
     const bubbleToggleBtn = document.getElementById('bubbleToggleBtn');
+    const bubbleResetBtn = document.getElementById('bubbleResetBtn');
     const inAppBubbleEl = document.getElementById('inAppBubble');
     const inAppBubbleCountEl = document.getElementById('inAppBubbleCount');
     const confirmOverlay = document.getElementById('confirmOverlay');
@@ -979,7 +981,6 @@
     }
 
     function finalizeSetUserName(name){
-      const previousName = currentUser;
       currentUser = name;
       localStorage.setItem(USER_KEY, name);
       userNameDisplay.textContent = '👤 ' + name;
@@ -987,33 +988,13 @@
       showToast('✅ تم حفظ الاسم: ' + name);
 
       if(isFirebaseReady){
-        if(previousName && previousName !== name){
-          releaseActiveName(previousName);
-        }
-        claimActiveName(name);
+        database.ref('nameOwners/' + name + '/deviceId').set(deviceId);
         database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
       }
 
       loadWeeklyManualTotal();
       loadLeaderboardFromFirebase();
       renderActiveUI();
-    }
-
-    // يحرّر "الحضور" الخاص بجهازنا عن اسم قديم (فقط إن كان جهازنا هو صاحب الحجز الحالي)
-    function releaseActiveName(name){
-      if(!name || !isFirebaseReady) return;
-      const ref = database.ref('nameOwners/' + name + '/activeDeviceId');
-      ref.once('value', (snap) => {
-        if(snap.val() === deviceId) ref.remove();
-      });
-    }
-
-    // يحجز "حضور" هذا الجهاز على الاسم، ويُزال تلقائياً عند إغلاق التطبيق أو فقدان
-    // الاتصال (onDisconnect) — فلا يبقى الاسم محجوزاً إلى الأبد بعد الخروج من التطبيق
-    function claimActiveName(name){
-      const ref = database.ref('nameOwners/' + name + '/activeDeviceId');
-      ref.onDisconnect().remove();
-      ref.set(deviceId);
     }
 
     function setUserName(){
@@ -1026,22 +1007,22 @@
         return;
       }
 
-      checkNameActiveAndSave(name);
+      checkNameUsedBeforeAndSave(name);
     }
 
-    // الاسم "مستخدَم" فقط طالما جهاز آخر متصل به فعلياً الآن (حضور حي)، وليس إلى الأبد.
-    // إن كان نشطاً على جهاز آخر الآن، نعرض تحذيراً مع خيار المتابعة على أي حال، أو
-    // الإلغاء لتعديل الاسم يدوياً (مثلاً بإضافة رقم).
-    function checkNameActiveAndSave(name){
-      database.ref('nameOwners/' + name + '/activeDeviceId').once('value', async (snap) => {
-        const activeDevice = snap.val();
-        const isActiveElsewhere = activeDevice && activeDevice !== deviceId;
+    // سجلّ دائم: هل حُفظ هذا الاسم من قبل على جهاز آخر — بصرف النظر عن اتصاله الآن أو لا.
+    // إن كان كذلك، نعرض تحذيراً مع خيار المتابعة على أي حال، أو الإلغاء لتعديل الاسم
+    // يدوياً (مثلاً بإضافة رقم).
+    function checkNameUsedBeforeAndSave(name){
+      database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
+        const savedDevice = snap.val();
+        const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
 
-        if(isActiveElsewhere){
+        if(usedByAnotherDevice){
           const ok = await customConfirm(
-            '⚠️ هذا الاسم "' + name + '" مستخدَم حالياً على جهاز آخر متصل الآن.\n\n' +
+            '⚠️ الاسم "' + name + '" محفوظ مسبقاً من جهاز آخر.\n\n' +
             'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
-            'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل اسمك (مثلاً أضف رقماً).'
+            'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل الاسم (مثلاً أضف رقماً).'
           );
           if(!ok){
             showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
@@ -1332,6 +1313,12 @@
       if(bubbleEnabled) disableBubble(); else enableBubble();
     });
 
+    bubbleResetBtn.addEventListener('click', () => {
+      bubbleCount = 0;
+      render();
+      showToast('🔄 تم تصفير عدّاد الفقاعة فقط');
+    });
+
     try {
       const savedQueue = localStorage.getItem('offline_queue');
       if(savedQueue) {
@@ -1353,7 +1340,6 @@
         loadTotalFromFirebase();
         loadLeaderboardFromFirebase();
         if(currentUser) {
-          claimActiveName(currentUser);
           loadWeeklyManualTotal();
         }
       } else {
