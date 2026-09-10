@@ -100,7 +100,9 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void hideBubble() {
-            stopService(new Intent(MainActivity.this, FloatingService.class));
+            Intent intent = new Intent(MainActivity.this, FloatingService.class);
+            intent.putExtra("hide", true);
+            startService(intent);
         }
     }
 
