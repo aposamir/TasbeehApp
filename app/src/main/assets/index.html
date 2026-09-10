@@ -735,10 +735,29 @@
     let offlineQueue = [];
     let weeklyManualTotal = 0;
 
-    function showToast(msg){
+    function showToast(msg, durationMs){
       toast.textContent = msg;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2200);
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => toast.classList.remove('show'), durationMs || 2200);
+    }
+
+    // تقرير مختصر عن حالة الجسر الفعلية مع التطبيق الأصلي (Android) — لا يمكن معرفة سبب
+    // خلل الفقاعة الخارجية (حجمها/عدم اختفائها) من هذا الملف وحده، فهذه التفاصيل تُنفَّذ
+    // في كود Android الأصلي الذي لم يُشارَك معي؛ هذا التقرير يساعد على تحديد نقطة الخلل بدقة.
+    function bubbleDiagnostics(){
+      const hasBridge = !!window.AndroidBridge;
+      const hasPermFn = hasBridge && typeof AndroidBridge.hasOverlayPermission === 'function';
+      let permVal = null;
+      if(hasPermFn){ try{ permVal = !!AndroidBridge.hasOverlayPermission(); }catch(e){ permVal = null; } }
+      const hasShow = hasBridge && typeof AndroidBridge.showOverlayBubble === 'function';
+      const hasHide = hasBridge && typeof AndroidBridge.hideBubble === 'function';
+      const hasUpdate = hasBridge && typeof AndroidBridge.updateCount === 'function';
+      return 'Bridge:' + (hasBridge?'✓':'✗') +
+        ' Perm:' + (permVal===null?'؟':(permVal?'✓':'✗')) +
+        ' Show:' + (hasShow?'✓':'✗') +
+        ' Hide:' + (hasHide?'✓':'✗') +
+        ' Update:' + (hasUpdate?'✓':'✗');
     }
 
     let _confirmResolve = null;
@@ -877,6 +896,7 @@
           if(!hasPermission) AndroidBridge.requestOverlayPermission();
         }
       }
+      setTimeout(() => showToast('🔧 ' + bubbleDiagnostics(), 6000), 2500);
     }
 
     function disableBubble(){
@@ -966,7 +986,9 @@
       updateBeads();
       renderGoal();
       if(bubbleEnabled && bubbleType === 'inapp'){ inAppBubbleCountEl.textContent = bubbleCount; }
-      if(bubbleEnabled && bubbleType === 'native' && window.AndroidBridge){ AndroidBridge.updateCount(bubbleCount); }
+      if(bubbleEnabled && window.AndroidBridge && typeof AndroidBridge.updateCount === 'function'){
+        try{ AndroidBridge.updateCount(bubbleCount); }catch(e){}
+      }
     }
 
     function vibrate(pattern){
