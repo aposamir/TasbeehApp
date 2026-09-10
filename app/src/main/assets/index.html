@@ -15,7 +15,7 @@
     --sage: #6E9B8C;
     --cream: #F3ECDD;
     --line: rgba(201,161,90,0.22);
-    --bubble-size: 75px;
+    --bubble-size: 100px;
   }
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html,body{ height:100%; margin:0; }
@@ -696,8 +696,8 @@
     let bubbleType = '';
     let deviceId = "";
     // بعد إصلاح خطأ القصّ في FloatingService.java، أصبح المقياس يعكس الحجم الظاهر فعلياً.
-    // كانت 4/9 تُنتج ~57dp، وطُلب مضاعفتها فأصبحت 8/9 (~114dp).
-    const NATIVE_BUBBLE_SCALE = 8 / 9;
+    // 7/9 من 128dp ≈ 100dp — نفس نسبة الفقاعة الداخلية (100px من أصل 128 الأساس) لتطابق الحجمين.
+    const NATIVE_BUBBLE_SCALE = 7 / 9;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
     let isSyncingQueue = false;
     let currentWeeklyRef = null;
@@ -979,6 +979,7 @@
     }
 
     function finalizeSetUserName(name){
+      const previousName = currentUser;
       currentUser = name;
       localStorage.setItem(USER_KEY, name);
       userNameDisplay.textContent = '👤 ' + name;
@@ -986,12 +987,33 @@
       showToast('✅ تم حفظ الاسم: ' + name);
 
       if(isFirebaseReady){
+        if(previousName && previousName !== name){
+          releaseActiveName(previousName);
+        }
+        claimActiveName(name);
         database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
       }
 
       loadWeeklyManualTotal();
       loadLeaderboardFromFirebase();
       renderActiveUI();
+    }
+
+    // يحرّر "الحضور" الخاص بجهازنا عن اسم قديم (فقط إن كان جهازنا هو صاحب الحجز الحالي)
+    function releaseActiveName(name){
+      if(!name || !isFirebaseReady) return;
+      const ref = database.ref('nameOwners/' + name + '/activeDeviceId');
+      ref.once('value', (snap) => {
+        if(snap.val() === deviceId) ref.remove();
+      });
+    }
+
+    // يحجز "حضور" هذا الجهاز على الاسم، ويُزال تلقائياً عند إغلاق التطبيق أو فقدان
+    // الاتصال (onDisconnect) — فلا يبقى الاسم محجوزاً إلى الأبد بعد الخروج من التطبيق
+    function claimActiveName(name){
+      const ref = database.ref('nameOwners/' + name + '/activeDeviceId');
+      ref.onDisconnect().remove();
+      ref.set(deviceId);
     }
 
     function setUserName(){
@@ -1004,30 +1026,32 @@
         return;
       }
 
-      claimNameAtomically(name);
+      checkNameActiveAndSave(name);
     }
 
-    // حجز الاسم بعملية ذرّية واحدة (transaction) بدل قراءة ثم كتابة منفصلتين.
-    // القراءة ثم الكتابة المنفصلتان كانتا عرضة لسباق حقيقي: لو حفظ جهازان نفس الاسم
-    // في نفس اللحظة تقريباً، كان كل منهما قد يقرأ "لا يوجد مالك بعد" قبل أن تصل كتابة
-    // الآخر، فيمرّ الاثنان معاً رغم فحص التصادم. الـ transaction تمنع هذا نهائياً لأن
-    // خادم فايربيس يطبّقها بالتتابع الفعلي دون أي احتمال تداخل.
-    function claimNameAtomically(name){
-      database.ref('nameOwners/' + name + '/ownerDeviceId').transaction((currentOwner) => {
-        if(currentOwner === null || currentOwner === deviceId){
-          return deviceId;
+    // الاسم "مستخدَم" فقط طالما جهاز آخر متصل به فعلياً الآن (حضور حي)، وليس إلى الأبد.
+    // إن كان نشطاً على جهاز آخر الآن، نعرض تحذيراً مع خيار المتابعة على أي حال، أو
+    // الإلغاء لتعديل الاسم يدوياً (مثلاً بإضافة رقم).
+    function checkNameActiveAndSave(name){
+      database.ref('nameOwners/' + name + '/activeDeviceId').once('value', async (snap) => {
+        const activeDevice = snap.val();
+        const isActiveElsewhere = activeDevice && activeDevice !== deviceId;
+
+        if(isActiveElsewhere){
+          const ok = await customConfirm(
+            '⚠️ هذا الاسم "' + name + '" مستخدَم حالياً على جهاز آخر متصل الآن.\n\n' +
+            'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
+            'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل اسمك (مثلاً أضف رقماً).'
+          );
+          if(!ok){
+            showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
+            return;
+          }
         }
-        return; // إرجاع undefined يُلغي العملية دون تغيير أي شيء
-      }, (error, committed) => {
-        if(error){
-          showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
-          return;
-        }
-        if(!committed){
-          showToast('❌ هذا الاسم مستخدم من جهاز آخر، الرجاء اختيار اسم مختلف');
-          return;
-        }
+
         finalizeSetUserName(name);
+      }, () => {
+        showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
       });
     }
 
@@ -1329,6 +1353,7 @@
         loadTotalFromFirebase();
         loadLeaderboardFromFirebase();
         if(currentUser) {
+          claimActiveName(currentUser);
           loadWeeklyManualTotal();
         }
       } else {
