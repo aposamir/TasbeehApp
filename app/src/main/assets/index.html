@@ -1013,38 +1013,26 @@
       checkNameUsedBeforeAndSave(name);
     }
 
-    // يحاول حجز الاسم بعملية ذرّية أولاً (تفوز في حال التصادم اللحظي تلقائياً)؛
-    // فقط إن كان الاسم مملوكاً فعلاً لجهاز آخر عند لحظة الحجز، نعرض تحذيراً مع خيار
-    // المتابعة (وعندها نستولي عليه صراحة بعد تأكيدك) أو الإلغاء لتعديل الاسم.
     function checkNameUsedBeforeAndSave(name){
-      const ref = database.ref('nameOwners/' + name + '/deviceId');
-      ref.transaction((currentOwner) => {
-        if(currentOwner === null || currentOwner === deviceId){
-          return deviceId;
-        }
-        return; // undefined = لا تغيير؛ يبقى الاسم لصاحبه الحالي الآن
-      }, async (error, committed) => {
-        if(error){
-          showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
-          return;
+      database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
+        const savedDevice = snap.val();
+        const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
+
+        if(usedByAnotherDevice){
+          const ok = await customConfirm(
+            '⚠️ الاسم "' + name + '" محفوظ مسبقاً من جهاز آخر.\n\n' +
+            'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
+            'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل الاسم (مثلاً أضف رقماً).'
+          );
+          if(!ok){
+            showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
+            return;
+          }
         }
 
-        if(committed){
-          finalizeSetUserName(name);
-          return;
-        }
-
-        const ok = await customConfirm(
-          '⚠️ الاسم "' + name + '" محفوظ مسبقاً من جهاز آخر.\n\n' +
-          'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
-          'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل الاسم (مثلاً أضف رقماً).'
-        );
-        if(!ok){
-          showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
-          return;
-        }
-
-        ref.set(deviceId).then(() => finalizeSetUserName(name));
+        finalizeSetUserName(name);
+      }, () => {
+        showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
       });
     }
 
