@@ -115,8 +115,13 @@ public class FloatingService extends Service {
                         if (Math.abs(event.getRawX() - initialTouchX) > 10 || Math.abs(event.getRawY() - initialTouchY) > 10) {
                             isClick = false;
                         }
-                        params.x = initialX + (int) (event.getRawX() - initialTouchX);
-                        params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                        int newX = initialX + (int) (event.getRawX() - initialTouchX);
+                        int newY = initialY + (int) (event.getRawY() - initialTouchY);
+                        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+                        int maxX = Math.max(0, dm.widthPixels - floatingView.getWidth());
+                        int maxY = Math.max(0, dm.heightPixels - floatingView.getHeight());
+                        params.x = Math.max(0, Math.min(newX, maxX));
+                        params.y = Math.max(0, Math.min(newY, maxY));
                         windowManager.updateViewLayout(floatingView, params);
                         return true;
                     case MotionEvent.ACTION_UP:
@@ -142,6 +147,11 @@ public class FloatingService extends Service {
         if (naturalWidth > 0 && naturalHeight > 0) {
             params.width = (int) Math.round(naturalWidth * scale);
             params.height = (int) Math.round(naturalHeight * scale);
+            android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+            int maxX = Math.max(0, dm.widthPixels - params.width);
+            int maxY = Math.max(0, dm.heightPixels - params.height);
+            params.x = Math.max(0, Math.min(params.x, maxX));
+            params.y = Math.max(0, Math.min(params.y, maxY));
             windowManager.updateViewLayout(floatingView, params);
         }
     }
