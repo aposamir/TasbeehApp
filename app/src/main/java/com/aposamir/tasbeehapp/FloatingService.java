@@ -17,7 +17,7 @@ import android.widget.TextView;
 
 public class FloatingService extends Service {
 
-    private static final double DEFAULT_SCALE = 2.0 / 3.0;
+    private static final double DEFAULT_SCALE = 4.0 / 9.0; // احتياطي فقط؛ القيمة الفعلية تأتي من JS عبر NATIVE_BUBBLE_SCALE
 
     private WindowManager windowManager;
     private View floatingView;
