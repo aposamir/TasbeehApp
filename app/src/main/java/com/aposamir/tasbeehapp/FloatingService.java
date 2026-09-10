@@ -1,10 +1,14 @@
 package com.aposamir.tasbeehapp;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ServiceInfo;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
@@ -15,11 +19,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.TextView;
+import androidx.core.app.NotificationCompat;
 
 public class FloatingService extends Service {
 
     private static final double DEFAULT_SCALE = 7.0 / 9.0; // احتياطي فقط؛ القيمة الفعلية تأتي من JS عبر NATIVE_BUBBLE_SCALE
     private static final int BASE_BUBBLE_DP = 128; // يطابق layout_width/height الثابت في layout_floating_bubble.xml
+    private static final int NOTIFICATION_ID = 1001;
+    private static final String CHANNEL_ID = "tasbeeh_bubble_channel";
 
     private WindowManager windowManager;
     private View floatingView;
@@ -39,6 +46,38 @@ public class FloatingService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) { return null; }
+
+    // خدمة أمامية (Foreground Service) حتى لا يوقفها النظام أثناء تصغير التطبيق —
+    // كان هذا هو سبب عودة الفقاعة لموضعها الافتراضي وصفرها عند العودة للتطبيق: كان
+    // النظام (خصوصاً MIUI) يوقف الخدمة في الخلفية، فتُنشأ من جديد بقيم افتراضية.
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        startForegroundWithNotification();
+    }
+
+    private void startForegroundWithNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, "فقاعة المسبحة", NotificationManager.IMPORTANCE_MIN);
+            channel.setShowBadge(false);
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("المسبحة تعمل في الخلفية")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setOngoing(true)
+                .build();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
