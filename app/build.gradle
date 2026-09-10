@@ -1,51 +1,38 @@
-plugins {
-    id 'com.android.application'
-}
+name: Build Android APK
 
-android {
-    namespace 'com.aposamir.tasbeehapp'
-    compileSdk 34
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
-    signingConfigs {
-        debug {
-            storeFile file("debug.keystore")
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
-        }
-    }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    defaultConfig {
-        applicationId "com.aposamir.tasbeehapp"
-        minSdk 21
-        targetSdk 34
-        versionCode 1
-        versionName "1.0"
-    }
+      - name: Decode debug keystore
+        run: base64 -d app/debug.keystore.base64 > app/debug.keystore
 
-    lint {
-        abortOnError false
-    }
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    buildTypes {
-        debug {
-            signingConfig signingConfigs.debug
-        }
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            def appName = "مسبحة جامع عبد الرحمن بن عوف"
-            outputFileName = "${appName}-${variant.buildType.name}.apk"
-        }
-    }
-}
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
-} 
+      - name: Build APK
+        run: ./gradlew build
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TasbeehApp
+          path: app/build/outputs/apk/debug/
