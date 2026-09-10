@@ -527,7 +527,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>📿 مسبحة جامع عبد الرحمن بن عوف 🕌</h1>
+    <h1 id="appTitle">📿 مسبحة جامع عبد الرحمن بن عوف 🕌</h1>
   </header>
 
   <div class="dhikr-select" id="dhikrSelect">
@@ -559,6 +559,8 @@
   <div class="controls">
     <button class="btn" id="targetBtn">تغيير الهدف</button>
     <button class="btn danger" id="resetBtn">🔄 تصفير</button>
+  </div>
+  <div class="controls">
     <button class="btn gold" id="bubbleToggleBtn">📿 تفعيل الفقاعة</button>
     <button class="btn danger" id="bubbleResetBtn">🔄 تصفير الفقاعة</button>
   </div>
@@ -832,6 +834,7 @@
       bubbleType = '';
       reconcileBubbleMode();
       updateBubbleButtons();
+      render();
 
       if(bubbleType === 'native'){
         showToast('📿 تم تفعيل الفقاعة فوق جميع التطبيقات');
@@ -1010,29 +1013,38 @@
       checkNameUsedBeforeAndSave(name);
     }
 
-    // سجلّ دائم: هل حُفظ هذا الاسم من قبل على جهاز آخر — بصرف النظر عن اتصاله الآن أو لا.
-    // إن كان كذلك، نعرض تحذيراً مع خيار المتابعة على أي حال، أو الإلغاء لتعديل الاسم
-    // يدوياً (مثلاً بإضافة رقم).
+    // يحاول حجز الاسم بعملية ذرّية أولاً (تفوز في حال التصادم اللحظي تلقائياً)؛
+    // فقط إن كان الاسم مملوكاً فعلاً لجهاز آخر عند لحظة الحجز، نعرض تحذيراً مع خيار
+    // المتابعة (وعندها نستولي عليه صراحة بعد تأكيدك) أو الإلغاء لتعديل الاسم.
     function checkNameUsedBeforeAndSave(name){
-      database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
-        const savedDevice = snap.val();
-        const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
-
-        if(usedByAnotherDevice){
-          const ok = await customConfirm(
-            '⚠️ الاسم "' + name + '" محفوظ مسبقاً من جهاز آخر.\n\n' +
-            'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
-            'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل الاسم (مثلاً أضف رقماً).'
-          );
-          if(!ok){
-            showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
-            return;
-          }
+      const ref = database.ref('nameOwners/' + name + '/deviceId');
+      ref.transaction((currentOwner) => {
+        if(currentOwner === null || currentOwner === deviceId){
+          return deviceId;
+        }
+        return; // undefined = لا تغيير؛ يبقى الاسم لصاحبه الحالي الآن
+      }, async (error, committed) => {
+        if(error){
+          showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
+          return;
         }
 
-        finalizeSetUserName(name);
-      }, () => {
-        showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
+        if(committed){
+          finalizeSetUserName(name);
+          return;
+        }
+
+        const ok = await customConfirm(
+          '⚠️ الاسم "' + name + '" محفوظ مسبقاً من جهاز آخر.\n\n' +
+          'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
+          'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل الاسم (مثلاً أضف رقماً).'
+        );
+        if(!ok){
+          showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
+          return;
+        }
+
+        ref.set(deviceId).then(() => finalizeSetUserName(name));
       });
     }
 
@@ -1422,6 +1434,17 @@
     toggleLeaderboardBtn.addEventListener('click', toggleLeaderboard);
 
     deviceId = getOrCreateDeviceId();
+    const appTitleEl = document.getElementById('appTitle');
+    if(appTitleEl){
+      let titlePressTimer = null;
+      const startPress = () => { titlePressTimer = setTimeout(() => showToast('🔧 ' + deviceId.slice(-8), 5000), 2000); };
+      const cancelPress = () => { clearTimeout(titlePressTimer); };
+      appTitleEl.addEventListener('touchstart', startPress);
+      appTitleEl.addEventListener('touchend', cancelPress);
+      appTitleEl.addEventListener('touchcancel', cancelPress);
+      appTitleEl.addEventListener('mousedown', startPress);
+      appTitleEl.addEventListener('mouseup', cancelPress);
+    }
     setDhikr('اللهم صل على محمد وآله وسلم', '∞', 'true');
     loadPersonal();
     loadUserName();
