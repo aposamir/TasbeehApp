@@ -724,21 +724,6 @@
       showToast._timer = setTimeout(() => toast.classList.remove('show'), durationMs || 2200);
     }
 
-    function bubbleDiagnostics(){
-      const hasBridge = !!window.AndroidBridge;
-      const hasPermFn = hasBridge && typeof AndroidBridge.hasOverlayPermission === 'function';
-      let permVal = null;
-      if(hasPermFn){ try{ permVal = !!AndroidBridge.hasOverlayPermission(); }catch(e){ permVal = null; } }
-      const hasShow = hasBridge && typeof AndroidBridge.showOverlayBubble === 'function';
-      const hasHide = hasBridge && typeof AndroidBridge.hideBubble === 'function';
-      const hasUpdate = hasBridge && typeof AndroidBridge.updateCount === 'function';
-      return 'Bridge:' + (hasBridge?'✓':'✗') +
-        ' Perm:' + (permVal===null?'؟':(permVal?'✓':'✗')) +
-        ' Show:' + (hasShow?'✓':'✗') +
-        ' Hide:' + (hasHide?'✓':'✗') +
-        ' Update:' + (hasUpdate?'✓':'✗');
-    }
-
     let _confirmResolve = null;
     function customConfirm(message){
       return new Promise((resolve) => {
@@ -857,7 +842,6 @@
           if(!hasPermission) AndroidBridge.requestOverlayPermission();
         }
       }
-      setTimeout(() => showToast('🔧 ' + bubbleDiagnostics(), 6000), 2500);
     }
 
     function disableBubble(){
