@@ -695,7 +695,10 @@
     let bubbleEnabled = false;
     let bubbleType = '';
     let deviceId = "";
-    const NATIVE_BUBBLE_SCALE = 2 / 3;
+    // فحص كود Android الفعلي (FloatingService.java) أظهر أن حجمها الأساسي 128dp، وأن القيمة
+    // 2/3 كانت مطابقة تماماً للافتراضي المبرمج هناك أصلاً — لذلك لم يحدث أي تصغير فعلي.
+    // 4/9 (=2/3×2/3) تُصغّر الحجم الظاهر سابقاً (~85dp) بمقدار الثلث فعلياً إلى ~57dp.
+    const NATIVE_BUBBLE_SCALE = 4 / 9;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
     let isSyncingQueue = false;
     let currentWeeklyRef = null;
