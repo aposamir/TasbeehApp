@@ -15,6 +15,7 @@
     --sage: #6E9B8C;
     --cream: #F3ECDD;
     --line: rgba(201,161,90,0.22);
+    --bubble-size: 100px;
   }
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html,body{ height:100%; margin:0; }
@@ -44,7 +45,6 @@
     z-index:0;
   }
   .wrap{ position:relative; z-index:1; width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; flex:1; }
-
   header{
     text-align:center;
     margin-top:4px;
@@ -62,8 +62,9 @@
     margin:0;
     color: var(--gold-soft);
     text-shadow: 0 0 18px rgba(228,200,136,0.25);
+    user-select:none;
+    -webkit-user-select:none;
   }
-
   .live-badge{
     background:rgba(76,175,80,0.15);
     border:1px solid #4CAF50;
@@ -75,7 +76,6 @@
     align-items:center;
     justify-content:center;
   }
-
   .dhikr-select{
     margin-top:12px;
     display:flex;
@@ -112,7 +112,6 @@
     background: rgba(14,46,44,0.3);
     color: var(--night-deep);
   }
-
   .name-input-area{
     display:flex;
     gap:6px;
@@ -148,7 +147,6 @@
     font-size:0.7rem;
     color:var(--gold-soft);
   }
-
   .counter-wrapper {
     position: relative;
     width: 100%;
@@ -159,7 +157,6 @@
     margin-top: 10px;
     padding: 0 2px;
   }
-
   .counter-zone{
     position:relative;
     width: min(64vw, 230px);
@@ -228,7 +225,6 @@
     min-height:16px;
     text-align:center;
   }
-
   .active-side-container {
     width: 90px;
     display: flex;
@@ -272,7 +268,6 @@
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   .controls{
     display:flex;
     gap:8px;
@@ -295,7 +290,6 @@
   .btn.gold{ border-color: var(--gold); color: var(--gold-soft); }
   .btn.success{ border-color: #4CAF50; color: #81C784; }
   .btn.info{ border-color: #42A5F5; color: #64B5F6; }
-
   .total-card{
     width:100%;
     max-width:440px;
@@ -319,7 +313,6 @@
     background:none; border:none; color: rgba(243,236,221,0.4);
     font-size:0.65rem; cursor:pointer; text-decoration:underline;
   }
-
   .personal-values-row{
     display:flex;
     align-items:center;
@@ -342,7 +335,6 @@
     height:28px;
     background: var(--line);
   }
-
   .goal-wrap{ width:100%; }
   .goal-track{
     width:100%; height:5px; border-radius:999px;
@@ -363,7 +355,6 @@
     text-align:left;
     direction:ltr;
   }
-
   .manual-input-area{
     display:flex;
     gap:6px;
@@ -408,7 +399,6 @@
     text-align:center;
     margin-top:2px;
   }
-
   .leaderboard-bar{
     display:flex;
     align-items:center;
@@ -417,7 +407,6 @@
     margin-top:6px;
     flex-wrap:wrap;
   }
-
   .leaderboard{
     width:100%;
     margin-top:10px;
@@ -477,11 +466,44 @@
     opacity:0; transition:all .35s ease; z-index:5; pointer-events:none;
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-
+  .confirm-overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10000;
+    padding:20px;
+  }
+  .confirm-overlay.show{ display:flex; }
+  .confirm-box{
+    background: linear-gradient(180deg, #133A37, var(--night-deep));
+    border:1px solid var(--gold);
+    border-radius:14px;
+    padding:18px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  .confirm-box p{
+    color: var(--cream);
+    font-size:0.85rem;
+    line-height:1.7;
+    margin:0 0 14px 0;
+    white-space:pre-line;
+  }
+  .confirm-actions{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+  }
+  .confirm-actions .btn{ flex:1; }
   .in-app-bubble{
     position:fixed;
     left: 16px; top: 90px;
-    width:45px; height:45px;
+    width: var(--bubble-size);
+    height: var(--bubble-size);
     border-radius:50%;
     background: radial-gradient(circle at 35% 30%, #1C4A45, var(--night-deep) 70%);
     border:2px solid var(--gold);
@@ -492,13 +514,12 @@
     color: var(--gold-soft);
     font-family: serif;
     font-weight:700;
-    font-size:0.9rem;
+    font-size:1.4rem;
     z-index:9999;
     cursor:pointer;
     user-select:none;
     touch-action:none;
   }
-
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
   ::-webkit-scrollbar{ width:3px; }
   ::-webkit-scrollbar-track{ background:transparent; }
@@ -508,7 +529,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>📿 مسبحة جامع عبد الرحمن بن عوف 🕌</h1>
+    <h1 id="appTitle">📿 مسبحة جامع عبد الرحمن بن عوف 🕌</h1>
   </header>
 
   <div class="dhikr-select" id="dhikrSelect">
@@ -540,8 +561,10 @@
   <div class="controls">
     <button class="btn" id="targetBtn">تغيير الهدف</button>
     <button class="btn danger" id="resetBtn">🔄 تصفير</button>
-    <button class="btn gold" id="enableBubbleBtn">📿 تفعيل الفقاعة</button>
-    <button class="btn danger" id="disableBubbleBtn" style="display:none;">🚫 اخفاء الفقاعة</button>
+  </div>
+  <div class="controls">
+    <button class="btn gold" id="bubbleToggleBtn">📿 تفعيل الفقاعة</button>
+    <button class="btn danger" id="bubbleResetBtn">🔄 تصفير الفقاعة</button>
   </div>
 
   <div class="total-card">
@@ -602,6 +625,16 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p id="confirmMessage"></p>
+    <div class="confirm-actions">
+      <button class="btn gold" id="confirmOkBtn">موافق</button>
+      <button class="btn danger" id="confirmCancelBtn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div id="inAppBubble" class="in-app-bubble" style="display:none;">
   <span id="inAppBubbleCount">0</span>
 </div>
@@ -652,22 +685,26 @@
     const weeklyLimitInfo = document.getElementById('weeklyLimitInfo');
     const activeSideRight = document.getElementById('activeSideRight');
     const activeSideLeft = document.getElementById('activeSideLeft');
-    const enableBubbleBtn = document.getElementById('enableBubbleBtn');
-    const disableBubbleBtn = document.getElementById('disableBubbleBtn');
+    const bubbleToggleBtn = document.getElementById('bubbleToggleBtn');
+    const bubbleResetBtn = document.getElementById('bubbleResetBtn');
     const inAppBubbleEl = document.getElementById('inAppBubble');
     const inAppBubbleCountEl = document.getElementById('inAppBubbleCount');
+    const confirmOverlay = document.getElementById('confirmOverlay');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmOkBtn = document.getElementById('confirmOkBtn');
+    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
 
     let current = 0, total = 0, personal = 0, personalSalawat = 0, cyclesThisSession = 0;
+    let bubbleCount = 0;
     let activeDhikr = "اللهم صل على محمد وآله وسلم", activeTarget = Infinity, isInfinite = true, addToTotal = true;
     let currentUser = "", isFirebaseReady = false;
     let bubbleEnabled = false;
-    let bubbleType = ''; // 'native' فوق التطبيقات | 'inapp' داخل التطبيق
+    let bubbleType = '';
     let deviceId = "";
-    let pendingNameForCollisionCheck = null;
-    const BUBBLE_SIZE_SCALE = 0.8; // تصغير الفقاعة بمقدار 20%
+    // بعد إصلاح خطأ القصّ في FloatingService.java، أصبح المقياس يعكس الحجم الظاهر فعلياً.
+    // 7/9 من 128dp ≈ 100dp — نفس نسبة الفقاعة الداخلية (100px من أصل 128 الأساس) لتطابق الحجمين.
+    const NATIVE_BUBBLE_SCALE = 7 / 9;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
-    const BUBBLE_STATE_KEY = 'tasbeeh_bubble_enabled';
-    const BUBBLE_TYPE_KEY = 'tasbeeh_bubble_type';
     let isSyncingQueue = false;
     let currentWeeklyRef = null;
     let totalRef = null;
@@ -685,11 +722,31 @@
     let offlineQueue = [];
     let weeklyManualTotal = 0;
 
-    function showToast(msg){
+    function showToast(msg, durationMs){
       toast.textContent = msg;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2200);
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => toast.classList.remove('show'), durationMs || 2200);
     }
+
+    let _confirmResolve = null;
+    function customConfirm(message){
+      return new Promise((resolve) => {
+        _confirmResolve = resolve;
+        confirmMessage.textContent = message;
+        confirmOverlay.classList.add('show');
+      });
+    }
+    confirmOkBtn.addEventListener('click', () => {
+      confirmOverlay.classList.remove('show');
+      if(_confirmResolve) _confirmResolve(true);
+      _confirmResolve = null;
+    });
+    confirmCancelBtn.addEventListener('click', () => {
+      confirmOverlay.classList.remove('show');
+      if(_confirmResolve) _confirmResolve(false);
+      _confirmResolve = null;
+    });
 
     function getOrCreateDeviceId(){
       try {
@@ -705,41 +762,25 @@
     }
 
     function updateBubbleButtons(){
-      enableBubbleBtn.style.display = bubbleEnabled ? 'none' : 'inline-block';
-      disableBubbleBtn.style.display = bubbleEnabled ? 'inline-block' : 'none';
+      bubbleToggleBtn.textContent = bubbleEnabled ? '🚫 اخفاء الفقاعة' : '📿 تفعيل الفقاعة';
+    }
+
+    function hideAllBubbleUI(){
+      hideInAppBubbleUI();
+      if(window.AndroidBridge && typeof AndroidBridge.hideBubble === 'function'){
+        try{ AndroidBridge.hideBubble(); }catch(e){}
+      }
     }
 
     function loadBubbleState(){
-      try {
-        bubbleEnabled = localStorage.getItem(BUBBLE_STATE_KEY) === '1';
-        bubbleType = localStorage.getItem(BUBBLE_TYPE_KEY) || '';
-      } catch(e){ bubbleEnabled = false; bubbleType = ''; }
-
-      // فقاعة "داخل التطبيق" عنصر ضمن الصفحة، تُهدم تلقائياً عند إعادة تحميل الصفحة،
-      // فلا يصح اعتبارها ما زالت ظاهرة بعد إعادة التحميل
-      if(bubbleEnabled && bubbleType === 'inapp'){
-        bubbleEnabled = false; bubbleType = ''; saveBubbleState();
-      }
-      // فقاعة "فوق التطبيقات" تعتمد على جسر أندرويد فعلي؛ إن لم يعد موجوداً فالحالة غير صحيحة
-      if(bubbleEnabled && bubbleType === 'native' && !window.AndroidBridge){
-        bubbleEnabled = false; bubbleType = ''; saveBubbleState();
-      }
+      bubbleEnabled = false;
+      bubbleType = '';
+      hideAllBubbleUI();
       updateBubbleButtons();
     }
 
-    function saveBubbleState(){
-      try {
-        localStorage.setItem(BUBBLE_STATE_KEY, bubbleEnabled ? '1' : '0');
-        localStorage.setItem(BUBBLE_TYPE_KEY, bubbleType || '');
-      } catch(e) {}
-    }
-
     function showInAppBubbleUI(){
-      const size = Math.round(45 * (BUBBLE_SIZE_SCALE / 0.8)); // 45px هو الحجم المصغّر أصلاً بمقدار 20%
-      inAppBubbleEl.style.width = size + 'px';
-      inAppBubbleEl.style.height = size + 'px';
-      inAppBubbleEl.style.fontSize = Math.max(11, Math.round(size * 0.32)) + 'px';
-      inAppBubbleCountEl.textContent = current;
+      inAppBubbleCountEl.textContent = bubbleCount;
       inAppBubbleEl.style.display = 'flex';
     }
 
@@ -769,57 +810,60 @@
     inAppBubbleEl.addEventListener('pointerup', () => {
       bubbleDragging = false;
       if(!bubbleDragMoved){
-        tap(); // نقرة بلا سحب على الفقاعة تُحتسب كضغطة عدّ
+        tap();
       }
     });
 
-    // العقد المتوقع مع تطبيق الأندرويد المضيف (AndroidBridge) لتشغيل الفقاعة فوق جميع التطبيقات:
-    //  - AndroidBridge.hasOverlayPermission() -> boolean : هل إذن "العرض فوق التطبيقات" ممنوح؟
-    //  - AndroidBridge.requestOverlayPermission() : يطلب هذا الإذن من المستخدم
-    //  - AndroidBridge.showOverlayBubble(scale) : يعرض الفقاعة فوق جميع التطبيقات بحجم مصغّر (scale)
-    //  - AndroidBridge.hideBubble() : يخفي الفقاعة الأصلية
-    // إن لم توجد هذه الدوال (كما في متصفح الاختبار الآن) تُستخدم فقاعة داخل الصفحة تلقائياً.
-    function enableBubble(){
+    function reconcileBubbleMode(){
+      if(!bubbleEnabled){ hideAllBubbleUI(); bubbleType = ''; return; }
+
       const hasPermFn = window.AndroidBridge && typeof AndroidBridge.hasOverlayPermission === 'function';
       const hasPermission = hasPermFn ? !!AndroidBridge.hasOverlayPermission() : false;
+      const canUseNative = hasPermission && window.AndroidBridge && typeof AndroidBridge.showOverlayBubble === 'function';
+      const targetType = canUseNative ? 'native' : 'inapp';
 
-      if(window.AndroidBridge && hasPermission && typeof AndroidBridge.showOverlayBubble === 'function'){
-        AndroidBridge.showOverlayBubble(BUBBLE_SIZE_SCALE);
-        bubbleType = 'native';
-        showToast('📿 تم تفعيل الفقاعة فوق جميع التطبيقات');
+      hideAllBubbleUI();
+      if(targetType === 'native'){
+        AndroidBridge.showOverlayBubble(NATIVE_BUBBLE_SCALE);
       } else {
         showInAppBubbleUI();
-        bubbleType = 'inapp';
-        if(window.AndroidBridge && !hasPermission){
-          showToast('📿 تم تفعيل الفقاعة داخل التطبيق (لا يوجد إذن العرض فوق التطبيقات)');
-          if(typeof AndroidBridge.requestOverlayPermission === 'function'){
-            AndroidBridge.requestOverlayPermission();
-          }
-        } else {
-          showToast('📿 تم تفعيل الفقاعة داخل التطبيق');
+      }
+      bubbleType = targetType;
+    }
+
+    function enableBubble(){
+      bubbleEnabled = true;
+      bubbleType = '';
+      reconcileBubbleMode();
+      updateBubbleButtons();
+      render();
+
+      if(bubbleType === 'native'){
+        showToast('📿 تم تفعيل الفقاعة فوق جميع التطبيقات');
+      } else {
+        showToast('📿 تم تفعيل الفقاعة داخل التطبيق');
+        if(window.AndroidBridge && typeof AndroidBridge.requestOverlayPermission === 'function'){
+          const hasPermFn = typeof AndroidBridge.hasOverlayPermission === 'function';
+          const hasPermission = hasPermFn ? !!AndroidBridge.hasOverlayPermission() : false;
+          if(!hasPermission) AndroidBridge.requestOverlayPermission();
         }
       }
-      bubbleEnabled = true;
-      saveBubbleState();
-      updateBubbleButtons();
     }
 
     function disableBubble(){
-      if(bubbleType === 'native' && window.AndroidBridge){
-        if(typeof AndroidBridge.hideBubble === 'function'){
-          AndroidBridge.hideBubble();
-        } else if(typeof AndroidBridge.toggleBubble === 'function'){
-          AndroidBridge.toggleBubble();
-        }
-      } else {
-        hideInAppBubbleUI();
-      }
       bubbleEnabled = false;
+      hideAllBubbleUI();
       bubbleType = '';
-      saveBubbleState();
       updateBubbleButtons();
       showToast('🚫 تم إخفاء الفقاعة');
     }
+
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible' && bubbleEnabled) reconcileBubbleMode();
+    });
+    window.addEventListener('focus', () => {
+      if(bubbleEnabled) reconcileBubbleMode();
+    });
 
     function getWeekStartSaturday(date = new Date()){
       const d = new Date(date);
@@ -890,8 +934,10 @@
       cyclesLabel.textContent = cyclesThisSession > 0 ? ('أكملت ' + cyclesThisSession + ' دورة') : '';
       updateBeads();
       renderGoal();
-      if(bubbleEnabled && bubbleType === 'inapp'){ inAppBubbleCountEl.textContent = current; }
-      if(window.AndroidBridge){ AndroidBridge.updateCount(current); }
+      if(bubbleEnabled && bubbleType === 'inapp'){ inAppBubbleCountEl.textContent = bubbleCount; }
+      if(bubbleEnabled && window.AndroidBridge && typeof AndroidBridge.updateCount === 'function'){
+        try{ AndroidBridge.updateCount(bubbleCount); }catch(e){}
+      }
     }
 
     function vibrate(pattern){
@@ -936,7 +982,10 @@
     }
 
     function sanitizeKey(str) {
-      return str.replace(/[.#$[\]/]/g, '_').trim();
+      return str
+        .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '') // رموز خفية شائعة عند النسخ من تطبيقات أخرى
+        .replace(/[.#$[\]/]/g, '_')
+        .trim();
     }
 
     function finalizeSetUserName(name){
@@ -946,8 +995,9 @@
       userNameDisplay.style.display = 'inline-block';
       showToast('✅ تم حفظ الاسم: ' + name);
 
-      if(isFirebaseReady && deviceId){
-        database.ref('nameOwners/' + name + '/devices/' + deviceId).set(true);
+      if(isFirebaseReady){
+        database.ref('nameOwners/' + name + '/deviceId').set(deviceId)
+          .catch(() => { showToast('⚠️ تعذّر تسجيل الاسم في القائمة المشتركة'); });
         database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
       }
 
@@ -962,36 +1012,42 @@
       if(name.length > 20){ showToast('❌ الاسم طويل جداً'); return; }
 
       if(!isFirebaseReady || !deviceId){
-        finalizeSetUserName(name);
-        pendingNameForCollisionCheck = name;
+        showToast('❌ يلزم الاتصال بالإنترنت للتحقق من الاسم قبل الحفظ');
         return;
       }
 
-      checkNameCollisionAndSave(name);
+      checkNameUsedBeforeAndSave(name);
     }
 
-    function checkNameCollisionAndSave(name){
-      database.ref('nameOwners/' + name + '/devices').once('value', (snap) => {
-        const devices = snap.val() || {};
-        const knownDeviceIds = Object.keys(devices);
-        const isNewDeviceForThisName = knownDeviceIds.length > 0 && !devices[deviceId];
+    // سجلّ دائم: هل حُفظ هذا الاسم من قبل على جهاز آخر — بصرف النظر عن اتصاله الآن أو لا.
+    // إن كان كذلك، نعرض تحذيراً مع خيار المتابعة على أي حال، أو الإلغاء لتعديل الاسم
+    // يدوياً (مثلاً بإضافة رقم).
+    // يحاول حجز الاسم بعملية ذرّية أولاً (تفوز في حال التصادم اللحظي تلقائياً)؛
+    // فقط إن كان الاسم مملوكاً فعلاً لجهاز آخر عند لحظة الحجز، نعرض تحذيراً مع خيار
+    // المتابعة (وعندها نستولي عليه صراحة بعد تأكيدك) أو الإلغاء لتعديل الاسم.
+    // ملاحظة: كانت هذه الدالة تستخدم transaction() لمنع تصادم لحظي بين جهازين، لكن
+    // تبيّن أن هذا النوع من العمليات مرفوض في بيئة قاعدة البيانات الحالية (يفشل حتى
+    // مع اسم جديد كلياً). رجعنا لقراءة ثم كتابة عاديتين — أثبتتا عملهما فعلياً من قبل.
+    function checkNameUsedBeforeAndSave(name){
+      database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
+        const savedDevice = snap.val();
+        const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
 
-        if(isNewDeviceForThisName){
-          const ok = confirm(
-            '⚠️ هذا الاسم "' + name + '" مستخدم مسبقاً من جهاز آخر.\n' +
-            'إن كان هذا فعلاً أنت وتستخدم جهازاً جديداً، اضغط "موافق" للمتابعة، وسيتم ربط هذا الجهاز بنفس الاسم والرصيد الأسبوعي المشترك.\n' +
-            'إن لم يكن هذا أنت، اضغط "إلغاء" واختر اسماً مختلفاً لتفادي تداخل العدّ مع شخص آخر.'
+        if(usedByAnotherDevice){
+          const ok = await customConfirm(
+            '⚠️ الاسم "' + name + '" محفوظ مسبقاً من جهاز آخر.\n\n' +
+            'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
+            'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل الاسم (مثلاً أضف رقماً).'
           );
           if(!ok){
-            showToast('❌ تم إلغاء الحفظ، جرّب اسماً مختلفاً');
+            showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
             return;
           }
         }
+
         finalizeSetUserName(name);
-        pendingNameForCollisionCheck = null;
       }, () => {
-        finalizeSetUserName(name);
-        pendingNameForCollisionCheck = null;
+        showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
       });
     }
 
@@ -1237,13 +1293,14 @@
     function tap(){
       if(!currentUser){ showToast('❌ سجّل اسمك أولاً في الأسفل'); return; }
       current++;
+      bubbleCount++;
       vibrate(12);
 
-      if(!isInfinite && current % activeTarget === 0){
+      if(!isInfinite && current >= activeTarget){
         cyclesThisSession++;
         vibrate([40,30,40,30,80]);
         showToast('✅ أتممت ' + activeTarget + ' – ' + activeDhikr);
-        // لا يُصفَّر العداد تلقائياً؛ يستمر العدّ حتى يُطلب التصفير يدوياً
+        current = 0;
       }
       render();
       if(addToTotal){
@@ -1267,8 +1324,15 @@
       render();
     }
 
-    enableBubbleBtn.addEventListener('click', enableBubble);
-    disableBubbleBtn.addEventListener('click', disableBubble);
+    bubbleToggleBtn.addEventListener('click', () => {
+      if(bubbleEnabled) disableBubble(); else enableBubble();
+    });
+
+    bubbleResetBtn.addEventListener('click', () => {
+      bubbleCount = 0;
+      render();
+      showToast('🔄 تم تصفير عدّاد الفقاعة فقط');
+    });
 
     try {
       const savedQueue = localStorage.getItem('offline_queue');
@@ -1292,12 +1356,6 @@
         loadLeaderboardFromFirebase();
         if(currentUser) {
           loadWeeklyManualTotal();
-        }
-        if(pendingNameForCollisionCheck && deviceId){
-          const nameToLink = pendingNameForCollisionCheck;
-          pendingNameForCollisionCheck = null;
-          database.ref('nameOwners/' + nameToLink + '/devices/' + deviceId).set(true);
-          database.ref('nameOwners/' + nameToLink + '/lastActive').set(Date.now());
         }
       } else {
         isFirebaseReady = false;
@@ -1327,10 +1385,12 @@
     resetBtn.addEventListener('click', () => {
       current = 0;
       cyclesThisSession = 0;
+      bubbleCount = 0;
       render();
     });
-    personalResetBtn.addEventListener('click', () => {
-      if(!confirm('هل تريد تصفير العدّاد الفردي؟')) return;
+    personalResetBtn.addEventListener('click', async () => {
+      const ok = await customConfirm('هل تريد تصفير العدّاد الفردي؟');
+      if(!ok) return;
       personal = 0;
       personalSalawat = 0;
       savePersonal();
@@ -1398,3 +1458,4 @@
 </script>
 </body>
 </html>
+ 
