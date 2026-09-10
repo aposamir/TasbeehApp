@@ -36,9 +36,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def appName = "مسبحة جامع عبد الرحمن بن عوف"
+            outputFileName = "${appName}-${variant.buildType.name}.apk"
+        }
+    }
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
-}
+} 
