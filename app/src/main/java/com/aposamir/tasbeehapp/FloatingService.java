@@ -81,6 +81,11 @@ public class FloatingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.getBooleanExtra("hide", false)) {
+            hideView();
+            return START_STICKY;
+        }
+
         double scale = DEFAULT_SCALE;
         if (intent != null && intent.hasExtra("scale")) {
             scale = intent.getDoubleExtra("scale", DEFAULT_SCALE);
@@ -93,6 +98,14 @@ public class FloatingService extends Service {
         }
 
         return START_STICKY;
+    }
+
+    // يُخفي الفقاعة عن الشاشة فقط (يزيلها من مدير النوافذ) دون تدمير الخدمة أو حذف
+    // موضعها/عدّادها المحفوظين في الذاكرة — بذلك يعودان كما كانا بالضبط عند إظهارها مجدداً
+    private void hideView() {
+        if (floatingView != null && floatingView.getParent() != null && windowManager != null) {
+            try { windowManager.removeView(floatingView); } catch (Exception e) {}
+        }
     }
 
     // يُصغِّر حجم الدائرة الفعلي (TextView) نفسه، بدل تصغير نافذة النظام المحيطة فقط —
@@ -200,14 +213,19 @@ public class FloatingService extends Service {
         int maxY = Math.max(0, dm.heightPixels - newHeight);
         params.x = Math.max(0, Math.min(params.x, maxX));
         params.y = Math.max(0, Math.min(params.y, maxY));
-        windowManager.updateViewLayout(floatingView, params);
+
+        if (floatingView.getParent() == null) {
+            windowManager.addView(floatingView, params); // كانت مخفية (hideView) — نعيد إرفاقها بنفس الموضع والعدّاد المحفوظين
+        } else {
+            windowManager.updateViewLayout(floatingView, params);
+        }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (floatingView != null && windowManager != null) {
-            windowManager.removeView(floatingView);
+        if (floatingView != null && floatingView.getParent() != null && windowManager != null) {
+            try { windowManager.removeView(floatingView); } catch (Exception e) {}
         }
         floatingView = null;
         try {
@@ -215,4 +233,4 @@ public class FloatingService extends Service {
         } catch (IllegalArgumentException e) {
         }
     }
-}
+} 
