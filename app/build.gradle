@@ -1,38 +1,51 @@
-name: Build Android APK
+plugins {
+    id 'com.android.application'
+}
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+android {
+    namespace 'com.aposamir.tasbeehapp'
+    compileSdk 34
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    signingConfigs {
+        debug {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
 
-      - name: Decode debug keystore
-        run: base64 -d app/debug.keystore.base64 > app/debug.keystore
+    defaultConfig {
+        applicationId "com.aposamir.tasbeehapp"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+    lint {
+        abortOnError false
+    }
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def appName = "مسبحة جامع عبد الرحمن بن عوف"
+            outputFileName = "${appName}-${variant.buildType.name}.apk"
+        }
+    }
+}
 
-      - name: Build APK
-        run: ./gradlew build
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TasbeehApp
-          path: app/build/outputs/apk/debug/
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+}
