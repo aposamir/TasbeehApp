@@ -15,7 +15,7 @@
     --sage: #6E9B8C;
     --cream: #F3ECDD;
     --line: rgba(201,161,90,0.22);
-    --bubble-size: 56px; /* حجم الفقاعة الداخلية؛ نحاول مطابقته بصرياً مع الفقاعة الخارجية */
+    --bubble-size: 75px;
   }
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html,body{ height:100%; margin:0; }
@@ -45,7 +45,6 @@
     z-index:0;
   }
   .wrap{ position:relative; z-index:1; width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; flex:1; }
-
   header{
     text-align:center;
     margin-top:4px;
@@ -64,7 +63,6 @@
     color: var(--gold-soft);
     text-shadow: 0 0 18px rgba(228,200,136,0.25);
   }
-
   .live-badge{
     background:rgba(76,175,80,0.15);
     border:1px solid #4CAF50;
@@ -76,7 +74,6 @@
     align-items:center;
     justify-content:center;
   }
-
   .dhikr-select{
     margin-top:12px;
     display:flex;
@@ -113,7 +110,6 @@
     background: rgba(14,46,44,0.3);
     color: var(--night-deep);
   }
-
   .name-input-area{
     display:flex;
     gap:6px;
@@ -149,7 +145,6 @@
     font-size:0.7rem;
     color:var(--gold-soft);
   }
-
   .counter-wrapper {
     position: relative;
     width: 100%;
@@ -160,7 +155,6 @@
     margin-top: 10px;
     padding: 0 2px;
   }
-
   .counter-zone{
     position:relative;
     width: min(64vw, 230px);
@@ -229,7 +223,6 @@
     min-height:16px;
     text-align:center;
   }
-
   .active-side-container {
     width: 90px;
     display: flex;
@@ -273,7 +266,6 @@
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   .controls{
     display:flex;
     gap:8px;
@@ -296,7 +288,6 @@
   .btn.gold{ border-color: var(--gold); color: var(--gold-soft); }
   .btn.success{ border-color: #4CAF50; color: #81C784; }
   .btn.info{ border-color: #42A5F5; color: #64B5F6; }
-
   .total-card{
     width:100%;
     max-width:440px;
@@ -320,7 +311,6 @@
     background:none; border:none; color: rgba(243,236,221,0.4);
     font-size:0.65rem; cursor:pointer; text-decoration:underline;
   }
-
   .personal-values-row{
     display:flex;
     align-items:center;
@@ -343,7 +333,6 @@
     height:28px;
     background: var(--line);
   }
-
   .goal-wrap{ width:100%; }
   .goal-track{
     width:100%; height:5px; border-radius:999px;
@@ -364,7 +353,6 @@
     text-align:left;
     direction:ltr;
   }
-
   .manual-input-area{
     display:flex;
     gap:6px;
@@ -409,7 +397,6 @@
     text-align:center;
     margin-top:2px;
   }
-
   .leaderboard-bar{
     display:flex;
     align-items:center;
@@ -418,7 +405,6 @@
     margin-top:6px;
     flex-wrap:wrap;
   }
-
   .leaderboard{
     width:100%;
     margin-top:10px;
@@ -478,8 +464,6 @@
     opacity:0; transition:all .35s ease; z-index:5; pointer-events:none;
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-
-  /* نافذة تأكيد مخصّصة (بديل window.confirm الذي قد لا يعمل داخل بعض تطبيقات الأندرويد المضيفة عبر WebView) */
   .confirm-overlay{
     position:fixed; inset:0;
     background:rgba(0,0,0,0.55);
@@ -513,7 +497,6 @@
     justify-content:center;
   }
   .confirm-actions .btn{ flex:1; }
-
   .in-app-bubble{
     position:fixed;
     left: 16px; top: 90px;
@@ -529,13 +512,12 @@
     color: var(--gold-soft);
     font-family: serif;
     font-weight:700;
-    font-size:1.05rem;
+    font-size:1.4rem;
     z-index:9999;
     cursor:pointer;
     user-select:none;
     touch-action:none;
   }
-
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
   ::-webkit-scrollbar{ width:3px; }
   ::-webkit-scrollbar-track{ background:transparent; }
@@ -711,13 +693,10 @@
     let activeDhikr = "اللهم صل على محمد وآله وسلم", activeTarget = Infinity, isInfinite = true, addToTotal = true;
     let currentUser = "", isFirebaseReady = false;
     let bubbleEnabled = false;
-    let bubbleType = ''; // 'native' فوق التطبيقات | 'inapp' داخل التطبيق — قيمة مشتقة تلقائياً، لا تُحفظ
+    let bubbleType = '';
     let deviceId = "";
-    // نفترض أن القيمة 1 = الحجم الافتراضي الكامل للفقاعة في التطبيق الأصلي (Android).
-    // 2/3 = تصغيرها بمقدار الثلث بالضبط. إن اختلف الحجم الفعلي على جهازك، عدّل هذا الرقم فقط.
     const NATIVE_BUBBLE_SCALE = 2 / 3;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
-    const BUBBLE_STATE_KEY = 'tasbeeh_bubble_enabled';
     let isSyncingQueue = false;
     let currentWeeklyRef = null;
     let totalRef = null;
@@ -742,9 +721,6 @@
       showToast._timer = setTimeout(() => toast.classList.remove('show'), durationMs || 2200);
     }
 
-    // تقرير مختصر عن حالة الجسر الفعلية مع التطبيق الأصلي (Android) — لا يمكن معرفة سبب
-    // خلل الفقاعة الخارجية (حجمها/عدم اختفائها) من هذا الملف وحده، فهذه التفاصيل تُنفَّذ
-    // في كود Android الأصلي الذي لم يُشارَك معي؛ هذا التقرير يساعد على تحديد نقطة الخلل بدقة.
     function bubbleDiagnostics(){
       const hasBridge = !!window.AndroidBridge;
       const hasPermFn = hasBridge && typeof AndroidBridge.hasOverlayPermission === 'function';
@@ -796,7 +772,6 @@
       bubbleToggleBtn.textContent = bubbleEnabled ? '🚫 اخفاء الفقاعة' : '📿 تفعيل الفقاعة';
     }
 
-    // تُخفي كل أنواع الفقاعات دائماً قبل إظهار أي نوع، لضمان عدم ظهور الداخلية والخارجية معاً
     function hideAllBubbleUI(){
       hideInAppBubbleUI();
       if(window.AndroidBridge && typeof AndroidBridge.hideBubble === 'function'){
@@ -804,22 +779,11 @@
       }
     }
 
-    // لا نحفظ نوع الفقاعة (داخلية/خارجية) بين الجلسات؛ نحفظ فقط تفعيل/إيقاف الفقاعة،
-    // ونعيد تحديد النوع المناسب تلقائياً في كل مرة حسب توفر إذن العرض فوق التطبيقات حالياً
     function loadBubbleState(){
-      try {
-        bubbleEnabled = localStorage.getItem(BUBBLE_STATE_KEY) === '1';
-      } catch(e){ bubbleEnabled = false; }
+      bubbleEnabled = false;
       bubbleType = '';
+      hideAllBubbleUI();
       updateBubbleButtons();
-
-      if(bubbleEnabled) reconcileBubbleMode();
-    }
-
-    function saveBubbleState(){
-      try {
-        localStorage.setItem(BUBBLE_STATE_KEY, bubbleEnabled ? '1' : '0');
-      } catch(e) {}
     }
 
     function showInAppBubbleUI(){
@@ -857,19 +821,15 @@
       }
     });
 
-    // فقاعة واحدة منطقياً: هذه الدالة تقرر نوعها (خارجية إن توفر الإذن، وإلا داخلية)
-    // وتُظهر واحدة فقط في كل مرة، بعد إخفاء أي فقاعة أخرى بشكل صريح أولاً
     function reconcileBubbleMode(){
-      if(!bubbleEnabled){ hideAllBubbleUI(); return; }
+      if(!bubbleEnabled){ hideAllBubbleUI(); bubbleType = ''; return; }
 
       const hasPermFn = window.AndroidBridge && typeof AndroidBridge.hasOverlayPermission === 'function';
       const hasPermission = hasPermFn ? !!AndroidBridge.hasOverlayPermission() : false;
       const canUseNative = hasPermission && window.AndroidBridge && typeof AndroidBridge.showOverlayBubble === 'function';
       const targetType = canUseNative ? 'native' : 'inapp';
 
-      if(targetType === bubbleType) return; // لا تغيير فعلي، لا داعي لإعادة الرسم
-
-      hideAllBubbleUI(); // إخفاء أي فقاعة سابقة أولاً — يمنع ظهور الاثنتين معاً
+      hideAllBubbleUI();
       if(targetType === 'native'){
         AndroidBridge.showOverlayBubble(NATIVE_BUBBLE_SCALE);
       } else {
@@ -880,8 +840,7 @@
 
     function enableBubble(){
       bubbleEnabled = true;
-      bubbleType = ''; // إجبار إعادة تقييم النوع فوراً
-      saveBubbleState();
+      bubbleType = '';
       reconcileBubbleMode();
       updateBubbleButtons();
 
@@ -889,7 +848,6 @@
         showToast('📿 تم تفعيل الفقاعة فوق جميع التطبيقات');
       } else {
         showToast('📿 تم تفعيل الفقاعة داخل التطبيق');
-        // لا يوجد إذن العرض فوق التطبيقات بعد — نطلبه ليصبح ممكناً لاحقاً
         if(window.AndroidBridge && typeof AndroidBridge.requestOverlayPermission === 'function'){
           const hasPermFn = typeof AndroidBridge.hasOverlayPermission === 'function';
           const hasPermission = hasPermFn ? !!AndroidBridge.hasOverlayPermission() : false;
@@ -903,12 +861,10 @@
       bubbleEnabled = false;
       hideAllBubbleUI();
       bubbleType = '';
-      saveBubbleState();
       updateBubbleButtons();
       showToast('🚫 تم إخفاء الفقاعة');
     }
 
-    // إعادة تقييم نوع الفقاعة عند العودة للتطبيق (مثلاً بعد منح إذن العرض فوق التطبيقات من الإعدادات)
     document.addEventListener('visibilitychange', () => {
       if(document.visibilityState === 'visible' && bubbleEnabled) reconcileBubbleMode();
     });
@@ -1053,7 +1009,6 @@
       renderActiveUI();
     }
 
-    // يتحقق من التصادم فقط عند الحفظ الصريح (ضغط زر "حفظ")، وليس تلقائياً عند كل فتح للتطبيق
     function setUserName(){
       const name = sanitizeKey(userNameInput.value);
       if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }
@@ -1069,25 +1024,17 @@
     }
 
     function checkNameCollisionAndSave(name){
-      database.ref('nameOwners/' + name + '/devices').once('value', async (snap) => {
+      database.ref('nameOwners/' + name + '/devices').once('value', (snap) => {
         const devices = snap.val() || {};
         const knownDeviceIds = Object.keys(devices);
-        const isNewDeviceForThisName = knownDeviceIds.length > 0 && !devices[deviceId];
+        const isUsedByAnotherDevice = knownDeviceIds.length > 0 && !devices[deviceId];
 
-        if(isNewDeviceForThisName){
-          const ok = await customConfirm(
-            '⚠️ هذا الاسم "' + name + '" مستخدم مسبقاً من جهاز آخر.\n\n' +
-            'إن كان هذا فعلاً أنت (مثلاً نسخة مكرّرة/مضاعفة من التطبيق على نفس هاتفك)، اضغط "موافق" للمتابعة، وسيتم ربط هذا الجهاز بنفس الاسم والرصيد الأسبوعي المشترك بحيث لا يُحتسب مرتين.\n\n' +
-            'إن لم يكن هذا أنت، اضغط "إلغاء" واختر اسماً مختلفاً لتفادي تداخل العدّ مع شخص آخر.'
-          );
-          if(!ok){
-            showToast('❌ تم إلغاء الحفظ، جرّب اسماً مختلفاً');
-            return;
-          }
+        if(isUsedByAnotherDevice){
+          showToast('❌ هذا الاسم مستخدم من جهاز آخر، الرجاء اختيار اسم مختلف');
+          return;
         }
         finalizeSetUserName(name);
       }, () => {
-        // تعذّر التحقق (خطأ اتصال مؤقت) — نحفظ محلياً بدون تحقق كحل احتياطي
         finalizeSetUserName(name);
       });
     }
@@ -1341,7 +1288,7 @@
         cyclesThisSession++;
         vibrate([40,30,40,30,80]);
         showToast('✅ أتممت ' + activeTarget + ' – ' + activeDhikr);
-        current = 0; // يُصفَّر العدّاد الرئيسي والمسبحة عند إتمام الدورة؛ عدّاد الفقاعة (bubbleCount) لا يتأثر بهذا إطلاقاً
+        current = 0;
       }
       render();
       if(addToTotal){
