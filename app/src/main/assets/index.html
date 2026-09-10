@@ -695,10 +695,9 @@
     let bubbleEnabled = false;
     let bubbleType = '';
     let deviceId = "";
-    // فحص كود Android الفعلي (FloatingService.java) أظهر أن حجمها الأساسي 128dp، وأن القيمة
-    // 2/3 كانت مطابقة تماماً للافتراضي المبرمج هناك أصلاً — لذلك لم يحدث أي تصغير فعلي.
-    // 4/9 (=2/3×2/3) تُصغّر الحجم الظاهر سابقاً (~85dp) بمقدار الثلث فعلياً إلى ~57dp.
-    const NATIVE_BUBBLE_SCALE = 4 / 9;
+    // بعد إصلاح خطأ القصّ في FloatingService.java، أصبح المقياس يعكس الحجم الظاهر فعلياً.
+    // كانت 4/9 تُنتج ~57dp، وطُلب مضاعفتها فأصبحت 8/9 (~114dp).
+    const NATIVE_BUBBLE_SCALE = 8 / 9;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
     let isSyncingQueue = false;
     let currentWeeklyRef = null;
@@ -986,8 +985,7 @@
       userNameDisplay.style.display = 'inline-block';
       showToast('✅ تم حفظ الاسم: ' + name);
 
-      if(isFirebaseReady && deviceId){
-        database.ref('nameOwners/' + name + '/devices/' + deviceId).set(true);
+      if(isFirebaseReady){
         database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
       }
 
@@ -1002,26 +1000,33 @@
       if(name.length > 20){ showToast('❌ الاسم طويل جداً'); return; }
 
       if(!isFirebaseReady || !deviceId){
-        finalizeSetUserName(name);
-        showToast('📶 تم الحفظ محلياً، سيتم التحقق من الاسم عند توفر الاتصال');
+        showToast('❌ يلزم الاتصال بالإنترنت للتحقق من الاسم قبل الحفظ');
         return;
       }
 
-      checkNameCollisionAndSave(name);
+      claimNameAtomically(name);
     }
 
-    function checkNameCollisionAndSave(name){
-      database.ref('nameOwners/' + name + '/devices').once('value', (snap) => {
-        const devices = snap.val() || {};
-        const knownDeviceIds = Object.keys(devices);
-        const isUsedByAnotherDevice = knownDeviceIds.length > 0 && !devices[deviceId];
-
-        if(isUsedByAnotherDevice){
+    // حجز الاسم بعملية ذرّية واحدة (transaction) بدل قراءة ثم كتابة منفصلتين.
+    // القراءة ثم الكتابة المنفصلتان كانتا عرضة لسباق حقيقي: لو حفظ جهازان نفس الاسم
+    // في نفس اللحظة تقريباً، كان كل منهما قد يقرأ "لا يوجد مالك بعد" قبل أن تصل كتابة
+    // الآخر، فيمرّ الاثنان معاً رغم فحص التصادم. الـ transaction تمنع هذا نهائياً لأن
+    // خادم فايربيس يطبّقها بالتتابع الفعلي دون أي احتمال تداخل.
+    function claimNameAtomically(name){
+      database.ref('nameOwners/' + name + '/ownerDeviceId').transaction((currentOwner) => {
+        if(currentOwner === null || currentOwner === deviceId){
+          return deviceId;
+        }
+        return; // إرجاع undefined يُلغي العملية دون تغيير أي شيء
+      }, (error, committed) => {
+        if(error){
+          showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
+          return;
+        }
+        if(!committed){
           showToast('❌ هذا الاسم مستخدم من جهاز آخر، الرجاء اختيار اسم مختلف');
           return;
         }
-        finalizeSetUserName(name);
-      }, () => {
         finalizeSetUserName(name);
       });
     }
