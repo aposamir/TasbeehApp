@@ -982,7 +982,10 @@
     }
 
     function sanitizeKey(str) {
-      return str.replace(/[.#$[\]/]/g, '_').trim();
+      return str
+        .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '') // رموز خفية شائعة عند النسخ من تطبيقات أخرى
+        .replace(/[.#$[\]/]/g, '_')
+        .trim();
     }
 
     function finalizeSetUserName(name){
@@ -1027,8 +1030,15 @@
     function checkNameUsedBeforeAndSave(name){
       database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
         const savedDevice = snap.val();
-        // تشخيص مؤقت: يُظهر بالضبط ما قرأه من قاعدة البيانات مقابل معرّف هذا الجهاز
-        showToast('🔍 محفوظ=' + (savedDevice ? savedDevice.slice(-6) : 'فارغ') + ' | جهازي=' + deviceId.slice(-6), 6000);
+        // تشخيص مؤقت: نافذة ثابتة لا تختفي تلقائياً (بعكس التوست السابق الذي كانت
+        // رسالة "تم الحفظ" تستبدله بسرعة قبل أن يُقرأ) — يلزم الضغط "موافق" لإغلاقها
+        await customConfirm(
+          '🔍 تشخيص مؤقت\n\n' +
+          'اسم يُفحص: ' + name + '\n\n' +
+          'القيمة المحفوظة في القاعدة:\n' + (savedDevice || '(لا يوجد أي قيمة)') + '\n\n' +
+          'معرّف هذا الجهاز:\n' + deviceId + '\n\n' +
+          '(صوّر هذه النافذة قبل الضغط على موافق)'
+        );
         const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
 
         if(usedByAnotherDevice){
@@ -1470,4 +1480,3 @@
 </script>
 </body>
 </html>
- 
