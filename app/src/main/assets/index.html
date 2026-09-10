@@ -62,6 +62,8 @@
     margin:0;
     color: var(--gold-soft);
     text-shadow: 0 0 18px rgba(228,200,136,0.25);
+    user-select:none;
+    -webkit-user-select:none;
   }
   .live-badge{
     background:rgba(76,175,80,0.15);
@@ -1013,9 +1015,20 @@
       checkNameUsedBeforeAndSave(name);
     }
 
+    // سجلّ دائم: هل حُفظ هذا الاسم من قبل على جهاز آخر — بصرف النظر عن اتصاله الآن أو لا.
+    // إن كان كذلك، نعرض تحذيراً مع خيار المتابعة على أي حال، أو الإلغاء لتعديل الاسم
+    // يدوياً (مثلاً بإضافة رقم).
+    // يحاول حجز الاسم بعملية ذرّية أولاً (تفوز في حال التصادم اللحظي تلقائياً)؛
+    // فقط إن كان الاسم مملوكاً فعلاً لجهاز آخر عند لحظة الحجز، نعرض تحذيراً مع خيار
+    // المتابعة (وعندها نستولي عليه صراحة بعد تأكيدك) أو الإلغاء لتعديل الاسم.
+    // ملاحظة: كانت هذه الدالة تستخدم transaction() لمنع تصادم لحظي بين جهازين، لكن
+    // تبيّن أن هذا النوع من العمليات مرفوض في بيئة قاعدة البيانات الحالية (يفشل حتى
+    // مع اسم جديد كلياً). رجعنا لقراءة ثم كتابة عاديتين — أثبتتا عملهما فعلياً من قبل.
     function checkNameUsedBeforeAndSave(name){
       database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
         const savedDevice = snap.val();
+        // تشخيص مؤقت: يُظهر بالضبط ما قرأه من قاعدة البيانات مقابل معرّف هذا الجهاز
+        showToast('🔍 محفوظ=' + (savedDevice ? savedDevice.slice(-6) : 'فارغ') + ' | جهازي=' + deviceId.slice(-6), 6000);
         const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
 
         if(usedByAnotherDevice){
@@ -1424,14 +1437,17 @@
     deviceId = getOrCreateDeviceId();
     const appTitleEl = document.getElementById('appTitle');
     if(appTitleEl){
-      let titlePressTimer = null;
-      const startPress = () => { titlePressTimer = setTimeout(() => showToast('🔧 ' + deviceId.slice(-8), 5000), 2000); };
-      const cancelPress = () => { clearTimeout(titlePressTimer); };
-      appTitleEl.addEventListener('touchstart', startPress);
-      appTitleEl.addEventListener('touchend', cancelPress);
-      appTitleEl.addEventListener('touchcancel', cancelPress);
-      appTitleEl.addEventListener('mousedown', startPress);
-      appTitleEl.addEventListener('mouseup', cancelPress);
+      let tapCountForId = 0;
+      let tapResetTimer = null;
+      appTitleEl.addEventListener('click', () => {
+        tapCountForId++;
+        clearTimeout(tapResetTimer);
+        tapResetTimer = setTimeout(() => { tapCountForId = 0; }, 3000);
+        if(tapCountForId >= 5){
+          tapCountForId = 0;
+          showToast('🔧 ' + deviceId.slice(-8), 6000);
+        }
+      });
     }
     setDhikr('اللهم صل على محمد وآله وسلم', '∞', 'true');
     loadPersonal();
@@ -1454,3 +1470,4 @@
 </script>
 </body>
 </html>
+ 
