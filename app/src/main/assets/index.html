@@ -996,7 +996,18 @@
       showToast('✅ تم حفظ الاسم: ' + name);
 
       if(isFirebaseReady){
-        database.ref('nameOwners/' + name + '/deviceId').set(deviceId);
+        database.ref('nameOwners/' + name + '/deviceId').set(deviceId)
+          .then(() => {
+            // تأكيد فوري: نقرأ ما كتبناه للتو لنتأكد أنه استقرّ فعلاً في القاعدة
+            database.ref('nameOwners/' + name + '/deviceId').once('value', (snap) => {
+              if(snap.val() !== deviceId){
+                customConfirm('⚠️ تشخيص: كتبنا "' + deviceId + '" لكن القاعدة تُظهر الآن "' + (snap.val() || 'لا شيء') + '" — القيمة لم تستقر كما هو متوقع.');
+              }
+            });
+          })
+          .catch((err) => {
+            customConfirm('❌ فشلت كتابة معرّف الجهاز في القاعدة!\n\nرسالة الخطأ:\n' + err.message);
+          });
         database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
       }
 
@@ -1480,3 +1491,4 @@
 </script>
 </body>
 </html>
+ 
