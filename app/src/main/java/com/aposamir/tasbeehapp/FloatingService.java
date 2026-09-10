@@ -17,10 +17,13 @@ import android.widget.TextView;
 
 public class FloatingService extends Service {
 
+    private static final double DEFAULT_SCALE = 2.0 / 3.0;
+
     private WindowManager windowManager;
     private View floatingView;
     private TextView bubbleCounter;
     private int count = 0;
+    private WindowManager.LayoutParams params;
 
     private BroadcastReceiver webReceiver = new BroadcastReceiver() {
         @Override
@@ -36,11 +39,27 @@ public class FloatingService extends Service {
     public IBinder onBind(Intent intent) { return null; }
 
     @Override
-    public void onCreate() {
-        super.onCreate();
-        
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        double scale = DEFAULT_SCALE;
+        if (intent != null && intent.hasExtra("scale")) {
+            scale = intent.getDoubleExtra("scale", DEFAULT_SCALE);
+        }
+
+        if (floatingView == null) {
+            createFloatingBubble(scale);
+        } else {
+            applyScale(scale);
+        }
+
+        return START_STICKY;
+    }
+
+    private void createFloatingBubble(double scale) {
         floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_bubble, null);
         bubbleCounter = floatingView.findViewById(R.id.bubble_counter);
+        if (bubbleCounter != null) {
+            bubbleCounter.setText(String.valueOf(count));
+        }
 
         int layoutFlag;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -49,9 +68,17 @@ public class FloatingService extends Service {
             layoutFlag = WindowManager.LayoutParams.TYPE_PHONE;
         }
 
-        final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
+        floatingView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int naturalWidth = floatingView.getMeasuredWidth();
+        int naturalHeight = floatingView.getMeasuredHeight();
+        int scaledWidth = (int) Math.round(naturalWidth * scale);
+        int scaledHeight = (int) Math.round(naturalHeight * scale);
+
+        params = new WindowManager.LayoutParams(
+                scaledWidth > 0 ? scaledWidth : WindowManager.LayoutParams.WRAP_CONTENT,
+                scaledHeight > 0 ? scaledHeight : WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutFlag,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
@@ -103,10 +130,32 @@ public class FloatingService extends Service {
         });
     }
 
+    private void applyScale(double scale) {
+        if (floatingView == null || params == null || windowManager == null) return;
+
+        floatingView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int naturalWidth = floatingView.getMeasuredWidth();
+        int naturalHeight = floatingView.getMeasuredHeight();
+
+        if (naturalWidth > 0 && naturalHeight > 0) {
+            params.width = (int) Math.round(naturalWidth * scale);
+            params.height = (int) Math.round(naturalHeight * scale);
+            windowManager.updateViewLayout(floatingView, params);
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (floatingView != null) windowManager.removeView(floatingView);
-        unregisterReceiver(webReceiver);
+        if (floatingView != null && windowManager != null) {
+            windowManager.removeView(floatingView);
+        }
+        floatingView = null;
+        try {
+            unregisterReceiver(webReceiver);
+        } catch (IllegalArgumentException e) {
+        }
     }
 }
