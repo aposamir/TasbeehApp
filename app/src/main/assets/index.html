@@ -997,17 +997,7 @@
 
       if(isFirebaseReady){
         database.ref('nameOwners/' + name + '/deviceId').set(deviceId)
-          .then(() => {
-            // تأكيد فوري: نقرأ ما كتبناه للتو لنتأكد أنه استقرّ فعلاً في القاعدة
-            database.ref('nameOwners/' + name + '/deviceId').once('value', (snap) => {
-              if(snap.val() !== deviceId){
-                customConfirm('⚠️ تشخيص: كتبنا "' + deviceId + '" لكن القاعدة تُظهر الآن "' + (snap.val() || 'لا شيء') + '" — القيمة لم تستقر كما هو متوقع.');
-              }
-            });
-          })
-          .catch((err) => {
-            customConfirm('❌ فشلت كتابة معرّف الجهاز في القاعدة!\n\nرسالة الخطأ:\n' + err.message);
-          });
+          .catch(() => { showToast('⚠️ تعذّر تسجيل الاسم في القائمة المشتركة'); });
         database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
       }
 
@@ -1041,15 +1031,6 @@
     function checkNameUsedBeforeAndSave(name){
       database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
         const savedDevice = snap.val();
-        // تشخيص مؤقت: نافذة ثابتة لا تختفي تلقائياً (بعكس التوست السابق الذي كانت
-        // رسالة "تم الحفظ" تستبدله بسرعة قبل أن يُقرأ) — يلزم الضغط "موافق" لإغلاقها
-        await customConfirm(
-          '🔍 تشخيص مؤقت\n\n' +
-          'اسم يُفحص: ' + name + '\n\n' +
-          'القيمة المحفوظة في القاعدة:\n' + (savedDevice || '(لا يوجد أي قيمة)') + '\n\n' +
-          'معرّف هذا الجهاز:\n' + deviceId + '\n\n' +
-          '(صوّر هذه النافذة قبل الضغط على موافق)'
-        );
         const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
 
         if(usedByAnotherDevice){
@@ -1456,20 +1437,6 @@
     toggleLeaderboardBtn.addEventListener('click', toggleLeaderboard);
 
     deviceId = getOrCreateDeviceId();
-    const appTitleEl = document.getElementById('appTitle');
-    if(appTitleEl){
-      let tapCountForId = 0;
-      let tapResetTimer = null;
-      appTitleEl.addEventListener('click', () => {
-        tapCountForId++;
-        clearTimeout(tapResetTimer);
-        tapResetTimer = setTimeout(() => { tapCountForId = 0; }, 3000);
-        if(tapCountForId >= 5){
-          tapCountForId = 0;
-          showToast('🔧 ' + deviceId.slice(-8), 6000);
-        }
-      });
-    }
     setDhikr('اللهم صل على محمد وآله وسلم', '∞', 'true');
     loadPersonal();
     loadUserName();
