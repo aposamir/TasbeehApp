@@ -39,8 +39,7 @@ android {
 
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
-            def appName = "مسبحة جامع عبد الرحمن بن عوف"
-            outputFileName = "${appName}-${variant.buildType.name}.apk"
+            outputFileName = "TasbeehApp-${variant.buildType.name}.apk"
         }
     }
 }
