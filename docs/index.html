@@ -704,6 +704,7 @@
     let bubbleEnabled = false;
     let bubbleType = '';
     let deviceId = "";
+    let serverTimeOffsetMs = 0;
     const NATIVE_BUBBLE_SCALE = 7 / 9;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
     let isSyncingQueue = false;
@@ -866,7 +867,11 @@
       if(bubbleEnabled) reconcileBubbleMode();
     });
 
-    function getWeekStartSaturday(date = new Date()){
+    function serverNow(){
+      return new Date(Date.now() + serverTimeOffsetMs);
+    }
+
+    function getWeekStartSaturday(date = serverNow()){
       const d = new Date(date);
       d.setHours(0, 0, 0, 0);
       const day = d.getDay();
@@ -1373,6 +1378,10 @@
       }
     });
 
+    database.ref('.info/serverTimeOffset').on('value', (snap) => {
+      serverTimeOffsetMs = snap.val() || 0;
+    });
+
     tapBtn.addEventListener('click', tap);
     resetBtn.addEventListener('click', () => {
       current = 0;
@@ -1449,4 +1458,4 @@
   })();
 </script>
 </body>
-      </html> 
+  </html>
