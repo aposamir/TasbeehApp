@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,14 +27,26 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.4'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Build APK
-        run: gradle build
+        run: ./gradlew build
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: TasbeehApp
           path: app/build/outputs/apk/debug/
+
+      - name: Publish GitHub Release with APK
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "أحدث نسخة"
+          files: app/build/outputs/apk/debug/*.apk
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
