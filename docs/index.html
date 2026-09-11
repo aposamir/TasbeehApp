@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>مسبحة جامع عبد الرحمن بن عوف</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0E2E2C">
+<link rel="apple-touch-icon" href="icon-180.png">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -701,8 +704,6 @@
     let bubbleEnabled = false;
     let bubbleType = '';
     let deviceId = "";
-    // بعد إصلاح خطأ القصّ في FloatingService.java، أصبح المقياس يعكس الحجم الظاهر فعلياً.
-    // 7/9 من 128dp ≈ 100dp — نفس نسبة الفقاعة الداخلية (100px من أصل 128 الأساس) لتطابق الحجمين.
     const NATIVE_BUBBLE_SCALE = 7 / 9;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
     let isSyncingQueue = false;
@@ -983,7 +984,7 @@
 
     function sanitizeKey(str) {
       return str
-        .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '') // رموز خفية شائعة عند النسخ من تطبيقات أخرى
+        .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '')
         .replace(/[.#$[\]/]/g, '_')
         .trim();
     }
@@ -1019,15 +1020,6 @@
       checkNameUsedBeforeAndSave(name);
     }
 
-    // سجلّ دائم: هل حُفظ هذا الاسم من قبل على جهاز آخر — بصرف النظر عن اتصاله الآن أو لا.
-    // إن كان كذلك، نعرض تحذيراً مع خيار المتابعة على أي حال، أو الإلغاء لتعديل الاسم
-    // يدوياً (مثلاً بإضافة رقم).
-    // يحاول حجز الاسم بعملية ذرّية أولاً (تفوز في حال التصادم اللحظي تلقائياً)؛
-    // فقط إن كان الاسم مملوكاً فعلاً لجهاز آخر عند لحظة الحجز، نعرض تحذيراً مع خيار
-    // المتابعة (وعندها نستولي عليه صراحة بعد تأكيدك) أو الإلغاء لتعديل الاسم.
-    // ملاحظة: كانت هذه الدالة تستخدم transaction() لمنع تصادم لحظي بين جهازين، لكن
-    // تبيّن أن هذا النوع من العمليات مرفوض في بيئة قاعدة البيانات الحالية (يفشل حتى
-    // مع اسم جديد كلياً). رجعنا لقراءة ثم كتابة عاديتين — أثبتتا عملهما فعلياً من قبل.
     function checkNameUsedBeforeAndSave(name){
       database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
         const savedDevice = snap.val();
@@ -1457,5 +1449,4 @@
   })();
 </script>
 </body>
-</html>
- 
+      </html> 
