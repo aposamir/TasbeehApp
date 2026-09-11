@@ -13,6 +13,12 @@ android {
             keyAlias "androiddebugkey"
             keyPassword "android"
         }
+        release {
+            storeFile file("release.keystore")
+            storePassword "android"
+            keyAlias "tasbeehapp"
+            keyPassword "android"
+        }
     }
 
     defaultConfig {
@@ -32,6 +38,7 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
