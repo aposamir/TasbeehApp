@@ -20,7 +20,7 @@
     --line: rgba(201,161,90,0.22);
     --bubble-size: 100px;
   }
-  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   html,body{ height:100%; margin:0; }
   body{
     background: radial-gradient(1200px 800px at 50% -10%, #133A37 0%, var(--night) 45%, var(--night-deep) 100%);
@@ -133,6 +133,8 @@
     font-size:0.85rem;
     width:140px;
     text-align:center;
+    -webkit-user-select:text;
+    user-select:text;
   }
   .name-input-area input:focus{
     outline:2px solid var(--gold);
@@ -377,6 +379,8 @@
     width:100px;
     text-align:center;
     direction:ltr;
+    -webkit-user-select:text;
+    user-select:text;
   }
   .manual-input-area input:focus{
     outline:2px solid var(--gold);
@@ -707,6 +711,8 @@
     let serverTimeOffsetMs = 0;
     const NATIVE_BUBBLE_SCALE = 7 / 9;
     const DEVICE_ID_KEY = 'tasbeeh_device_id';
+    const BUBBLE_STATE_KEY = 'tasbeeh_bubble_enabled';
+    const BUBBLE_COUNT_KEY = 'tasbeeh_bubble_count';
     let isSyncingQueue = false;
     let currentWeeklyRef = null;
     let totalRef = null;
@@ -774,10 +780,28 @@
       }
     }
 
+    function saveBubbleState(){
+      try { localStorage.setItem(BUBBLE_STATE_KEY, bubbleEnabled ? '1' : '0'); } catch(e){}
+    }
+
+    function saveBubbleCount(){
+      try { localStorage.setItem(BUBBLE_COUNT_KEY, String(bubbleCount)); } catch(e){}
+    }
+
     function loadBubbleState(){
-      bubbleEnabled = false;
+      try {
+        bubbleEnabled = localStorage.getItem(BUBBLE_STATE_KEY) === '1';
+        bubbleCount = parseInt(localStorage.getItem(BUBBLE_COUNT_KEY), 10) || 0;
+      } catch(e){
+        bubbleEnabled = false;
+        bubbleCount = 0;
+      }
       bubbleType = '';
-      hideAllBubbleUI();
+      if(bubbleEnabled){
+        reconcileBubbleMode();
+      } else {
+        hideAllBubbleUI();
+      }
       updateBubbleButtons();
     }
 
@@ -835,6 +859,7 @@
 
     function enableBubble(){
       bubbleEnabled = true;
+      saveBubbleState();
       bubbleType = '';
       reconcileBubbleMode();
       updateBubbleButtons();
@@ -854,6 +879,7 @@
 
     function disableBubble(){
       bubbleEnabled = false;
+      saveBubbleState();
       hideAllBubbleUI();
       bubbleType = '';
       updateBubbleButtons();
@@ -940,7 +966,7 @@
       cyclesLabel.textContent = cyclesThisSession > 0 ? ('أكملت ' + cyclesThisSession + ' دورة') : '';
       updateBeads();
       renderGoal();
-      if(bubbleEnabled && bubbleType === 'inapp'){ inAppBubbleCountEl.textContent = bubbleCount; }
+      if(bubbleEnabled){ inAppBubbleCountEl.textContent = bubbleCount; }
       if(bubbleEnabled && window.AndroidBridge && typeof AndroidBridge.updateCount === 'function'){
         try{ AndroidBridge.updateCount(bubbleCount); }catch(e){}
       }
@@ -1291,6 +1317,7 @@
       if(!currentUser){ showToast('❌ سجّل اسمك أولاً في الأسفل'); return; }
       current++;
       bubbleCount++;
+      saveBubbleCount();
       vibrate(12);
 
       if(!isInfinite && current >= activeTarget){
@@ -1327,6 +1354,7 @@
 
     bubbleResetBtn.addEventListener('click', () => {
       bubbleCount = 0;
+      saveBubbleCount();
       render();
       showToast('🔄 تم تصفير عدّاد الفقاعة فقط');
     });
@@ -1386,7 +1414,6 @@
     resetBtn.addEventListener('click', () => {
       current = 0;
       cyclesThisSession = 0;
-      bubbleCount = 0;
       render();
     });
     personalResetBtn.addEventListener('click', async () => {
