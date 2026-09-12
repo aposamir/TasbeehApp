@@ -16,9 +16,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Decode debug keystore
-        run: base64 -d app/debug.keystore.base64 > app/debug.keystore
-
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
@@ -39,14 +36,14 @@ jobs:
         with:
           gradle-version: '8.4'
 
-      - name: Build APK
-        run: gradle build
+      - name: Build release APK
+        run: gradle assembleRelease
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: TasbeehApp
-          path: app/build/outputs/apk/
+          path: app/build/outputs/apk/release/
 
       - name: Publish GitHub Release with APK
         if: github.event_name == 'push'
@@ -54,7 +51,7 @@ jobs:
         with:
           tag_name: latest
           name: "أحدث نسخة"
-          files: app/build/outputs/apk/**/*.apk
+          files: app/build/outputs/apk/release/*.apk
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
