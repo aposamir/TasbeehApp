@@ -194,4 +194,4 @@ public class FloatingService extends Service {
         } catch (IllegalArgumentException e) {
         }
     }
-}
+} 
