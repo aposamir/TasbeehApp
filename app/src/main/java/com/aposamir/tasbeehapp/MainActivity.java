@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -67,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void updateCount(int count) {
+            SharedPreferences prefs = getSharedPreferences("bubble_prefs", MODE_PRIVATE);
+            prefs.edit().putInt("bubble_count", count).apply();
+
             Intent intent = new Intent("WEB_UPDATED");
             intent.putExtra("count", count);
             sendBroadcast(intent);
@@ -100,9 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void hideBubble() {
-            Intent intent = new Intent(MainActivity.this, FloatingService.class);
-            intent.putExtra("hide", true);
-            startService(intent);
+            stopService(new Intent(MainActivity.this, FloatingService.class));
         }
     }
 
