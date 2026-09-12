@@ -1,91 +1,49 @@
 package com.aposamir.tasbeehapp;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ServiceInfo;
+import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.TextView;
-import androidx.core.app.NotificationCompat;
 
 public class FloatingService extends Service {
 
-    private static final double DEFAULT_SCALE = 7.0 / 9.0; // احتياطي فقط؛ القيمة الفعلية تأتي من JS عبر NATIVE_BUBBLE_SCALE
-    private static final int BASE_BUBBLE_DP = 128; // يطابق layout_width/height الثابت في layout_floating_bubble.xml
-    private static final int NOTIFICATION_ID = 1001;
-    private static final String CHANNEL_ID = "tasbeeh_bubble_channel";
+    private static final double DEFAULT_SCALE = 2.0 / 3.0;
+    private static final long POLL_INTERVAL_MS = 1500;
 
     private WindowManager windowManager;
     private View floatingView;
     private TextView bubbleCounter;
     private int count = 0;
     private WindowManager.LayoutParams params;
+    private final Handler pollHandler = new Handler(Looper.getMainLooper());
+    private Runnable pollRunnable;
 
     private BroadcastReceiver webReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             count = intent.getIntExtra("count", count);
-            if (bubbleCounter != null) {
-                bubbleCounter.setText(String.valueOf(count));
-            }
+            updateCounterText();
         }
     };
 
     @Override
     public IBinder onBind(Intent intent) { return null; }
 
-    // خدمة أمامية (Foreground Service) حتى لا يوقفها النظام أثناء تصغير التطبيق —
-    // كان هذا هو سبب عودة الفقاعة لموضعها الافتراضي وصفرها عند العودة للتطبيق: كان
-    // النظام (خصوصاً MIUI) يوقف الخدمة في الخلفية، فتُنشأ من جديد بقيم افتراضية.
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        startForegroundWithNotification();
-    }
-
-    private void startForegroundWithNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, "فقاعة المسبحة", NotificationManager.IMPORTANCE_MIN);
-            channel.setShowBadge(false);
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) manager.createNotificationChannel(channel);
-        }
-
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("المسبحة تعمل في الخلفية")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setPriority(NotificationCompat.PRIORITY_MIN)
-                .setOngoing(true)
-                .build();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-        } else {
-            startForeground(NOTIFICATION_ID, notification);
-        }
-    }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && intent.getBooleanExtra("hide", false)) {
-            hideView();
-            return START_STICKY;
-        }
-
         double scale = DEFAULT_SCALE;
         if (intent != null && intent.hasExtra("scale")) {
             scale = intent.getDoubleExtra("scale", DEFAULT_SCALE);
@@ -93,6 +51,7 @@ public class FloatingService extends Service {
 
         if (floatingView == null) {
             createFloatingBubble(scale);
+            startPolling();
         } else {
             applyScale(scale);
         }
@@ -100,34 +59,42 @@ public class FloatingService extends Service {
         return START_STICKY;
     }
 
-    // يُخفي الفقاعة عن الشاشة فقط (يزيلها من مدير النوافذ) دون تدمير الخدمة أو حذف
-    // موضعها/عدّادها المحفوظين في الذاكرة — بذلك يعودان كما كانا بالضبط عند إظهارها مجدداً
-    private void hideView() {
-        if (floatingView != null && floatingView.getParent() != null && windowManager != null) {
-            try { windowManager.removeView(floatingView); } catch (Exception e) {}
-        }
-    }
-
-    // يُصغِّر حجم الدائرة الفعلي (TextView) نفسه، بدل تصغير نافذة النظام المحيطة فقط —
-    // تصغير النافذة وحدها كان يترك الدائرة بحجمها الأصلي 128dp فتُقصّ بحدود النافذة الأصغر
-    // (وهذا هو السبب الحقيقي لظهورها كـ"ربع دائرة" سابقاً).
-    private void applyScaleToChild(double scale) {
-        if (bubbleCounter == null) return;
-        float density = getResources().getDisplayMetrics().density;
-        int sizePx = Math.max(1, (int) Math.round(BASE_BUBBLE_DP * scale * density));
-        ViewGroup.LayoutParams lp = bubbleCounter.getLayoutParams();
-        lp.width = sizePx;
-        lp.height = sizePx;
-        bubbleCounter.setLayoutParams(lp);
-    }
-
-    private void createFloatingBubble(double scale) {
-        floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_bubble, null);
-        bubbleCounter = floatingView.findViewById(R.id.bubble_counter);
+    private void updateCounterText() {
         if (bubbleCounter != null) {
             bubbleCounter.setText(String.valueOf(count));
         }
-        applyScaleToChild(scale);
+    }
+
+    private void startPolling() {
+        pollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                SharedPreferences prefs = getSharedPreferences("bubble_prefs", MODE_PRIVATE);
+                int savedCount = prefs.getInt("bubble_count", count);
+                if (savedCount != count) {
+                    count = savedCount;
+                    updateCounterText();
+                }
+                pollHandler.postDelayed(this, POLL_INTERVAL_MS);
+            }
+        };
+        pollHandler.postDelayed(pollRunnable, POLL_INTERVAL_MS);
+    }
+
+    private void stopPolling() {
+        if (pollRunnable != null) {
+            pollHandler.removeCallbacks(pollRunnable);
+            pollRunnable = null;
+        }
+    }
+
+    private void createFloatingBubble(double scale) {
+        SharedPreferences prefsInit = getSharedPreferences("bubble_prefs", MODE_PRIVATE);
+        count = prefsInit.getInt("bubble_count", 0);
+
+        floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_bubble, null);
+        bubbleCounter = floatingView.findViewById(R.id.bubble_counter);
+        updateCounterText();
 
         int layoutFlag;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -136,9 +103,17 @@ public class FloatingService extends Service {
             layoutFlag = WindowManager.LayoutParams.TYPE_PHONE;
         }
 
+        floatingView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int naturalWidth = floatingView.getMeasuredWidth();
+        int naturalHeight = floatingView.getMeasuredHeight();
+        int scaledWidth = (int) Math.round(naturalWidth * scale);
+        int scaledHeight = (int) Math.round(naturalHeight * scale);
+
         params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                scaledWidth > 0 ? scaledWidth : WindowManager.LayoutParams.WRAP_CONTENT,
+                scaledHeight > 0 ? scaledHeight : WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutFlag,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
@@ -175,13 +150,8 @@ public class FloatingService extends Service {
                         if (Math.abs(event.getRawX() - initialTouchX) > 10 || Math.abs(event.getRawY() - initialTouchY) > 10) {
                             isClick = false;
                         }
-                        int newX = initialX + (int) (event.getRawX() - initialTouchX);
-                        int newY = initialY + (int) (event.getRawY() - initialTouchY);
-                        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
-                        int maxX = Math.max(0, dm.widthPixels - floatingView.getWidth());
-                        int maxY = Math.max(0, dm.heightPixels - floatingView.getHeight());
-                        params.x = Math.max(0, Math.min(newX, maxX));
-                        params.y = Math.max(0, Math.min(newY, maxY));
+                        params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                        params.y = initialY + (int) (event.getRawY() - initialTouchY);
                         windowManager.updateViewLayout(floatingView, params);
                         return true;
                     case MotionEvent.ACTION_UP:
@@ -198,25 +168,15 @@ public class FloatingService extends Service {
     private void applyScale(double scale) {
         if (floatingView == null || params == null || windowManager == null) return;
 
-        applyScaleToChild(scale);
-        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
-        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-
         floatingView.measure(
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        int newWidth = floatingView.getMeasuredWidth();
-        int newHeight = floatingView.getMeasuredHeight();
+        int naturalWidth = floatingView.getMeasuredWidth();
+        int naturalHeight = floatingView.getMeasuredHeight();
 
-        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
-        int maxX = Math.max(0, dm.widthPixels - newWidth);
-        int maxY = Math.max(0, dm.heightPixels - newHeight);
-        params.x = Math.max(0, Math.min(params.x, maxX));
-        params.y = Math.max(0, Math.min(params.y, maxY));
-
-        if (floatingView.getParent() == null) {
-            windowManager.addView(floatingView, params); // كانت مخفية (hideView) — نعيد إرفاقها بنفس الموضع والعدّاد المحفوظين
-        } else {
+        if (naturalWidth > 0 && naturalHeight > 0) {
+            params.width = (int) Math.round(naturalWidth * scale);
+            params.height = (int) Math.round(naturalHeight * scale);
             windowManager.updateViewLayout(floatingView, params);
         }
     }
@@ -224,8 +184,9 @@ public class FloatingService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (floatingView != null && floatingView.getParent() != null && windowManager != null) {
-            try { windowManager.removeView(floatingView); } catch (Exception e) {}
+        stopPolling();
+        if (floatingView != null && windowManager != null) {
+            windowManager.removeView(floatingView);
         }
         floatingView = null;
         try {
@@ -233,4 +194,4 @@ public class FloatingService extends Service {
         } catch (IllegalArgumentException e) {
         }
     }
-} 
+}
