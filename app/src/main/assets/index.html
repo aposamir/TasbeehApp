@@ -625,6 +625,11 @@
     <button class="total-reset" id="personalResetBtn">تصفير</button>
   </div>
 
+  <div class="total-card" id="allTimeTotalCard" style="display:none;">
+    <div class="total-label">🕋 إجمالي مشاركتك منذ التسجيل</div>
+    <div class="total-value" id="allTimeTotalValue">0</div>
+  </div>
+
   <div class="total-card" style="flex-direction:column; align-items:stretch; gap:4px;">
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
       <div class="total-label">📿 <span class="highlight-gold">العدد الكلي للصلاة على النبي ﷺ</span> <span id="onlineIndicator" class="status-offline">○</span></div>
@@ -722,6 +727,8 @@
     const goalNote = document.getElementById('goalNote');
     const personalValue = document.getElementById('personalValue');
     const personalSalawatValue = document.getElementById('personalSalawatValue');
+    const allTimeTotalCard = document.getElementById('allTimeTotalCard');
+    const allTimeTotalValue = document.getElementById('allTimeTotalValue');
     const personalResetBtn = document.getElementById('personalResetBtn');
     const cyclesLabel = document.getElementById('cyclesLabel');
     const resetBtn = document.getElementById('resetBtn');
@@ -771,6 +778,7 @@
     let currentWeeklyRef = null;
     let totalRef = null;
     let leadRef = null;
+    let allTimeTotalRef = null;
 
     let previousScores = {};
     let isFirstLeadLoad = true;
@@ -783,6 +791,18 @@
     const WEEKLY_MANUAL_LIMIT = 99999;
     let offlineQueue = [];
     let weeklyManualTotal = 0;
+
+    // يهرّب أي نص يأتي من قاعدة بيانات مشتركة (اسم مستخدم آخر مثلاً) قبل
+    // إدراجه بـ innerHTML، لمنع XSS لو احتوى الاسم وسوم HTML.
+    function escapeHtml(value){
+      if(value === null || value === undefined) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     function showToast(msg, durationMs){
       toast.textContent = msg;
@@ -1087,6 +1107,9 @@
       return str
         .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '')
         .replace(/[.#$[\]/]/g, '_')
+        // strip HTML-special characters too, as defense in depth on top
+        // of escapeHtml() at render time
+        .replace(/[<>"'`&]/g, '_')
         .trim();
     }
 
@@ -1104,6 +1127,7 @@
 
       loadWeeklyManualTotal();
       loadLeaderboardFromFirebase();
+      loadAllTimeTotal();
       renderActiveUI();
     }
 
@@ -1198,6 +1222,28 @@
       }
     }
 
+    // يعرض إجمالي مشاركة الاسم المسجَّل منذ أول استخدام (وليس بحدود
+    // الأسبوع الحالي فقط كما بقائمة الأوائل)، مخزَّن بـ users/<name>/
+    // allTimeTotal بقاعدة البيانات المشتركة — بحيث يبقى محفوظاً حتى لو
+    // تغيّر الجهاز أو أُعيد تثبيت التطبيق.
+    function loadAllTimeTotal(){
+      if(!currentUser || !isFirebaseReady){
+        allTimeTotalCard.style.display = 'none';
+        return;
+      }
+      if(allTimeTotalRef) allTimeTotalRef.off();
+      allTimeTotalRef = database.ref('users/' + currentUser + '/allTimeTotal');
+      allTimeTotalCard.style.display = 'flex';
+      allTimeTotalRef.on('value', (snap) => {
+        allTimeTotalValue.textContent = (Number(snap.val()) || 0).toLocaleString('en-US');
+      });
+    }
+
+    function bumpAllTimeTotal(user, amount){
+      if(!isFirebaseReady || !user) return;
+      database.ref('users/' + user + '/allTimeTotal').transaction((v) => (v || 0) + amount);
+    }
+
     function updateWeeklyLimitDisplay(){
       const remaining = Math.max(0, WEEKLY_MANUAL_LIMIT - weeklyManualTotal);
       weeklyLimitInfo.textContent = 'المتبقي لهذا الأسبوع: ' + remaining.toLocaleString('en-US');
@@ -1239,6 +1285,7 @@
           if(committed){
             database.ref('totalCount').transaction((v) => (v || 0) + val);
             database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + val);
+            bumpAllTimeTotal(currentUser, val);
             personal += val;
             personalSalawat += val;
             savePersonal();
@@ -1287,6 +1334,7 @@
           database.ref('totalCount').transaction((v) => (v || 0) + item.value);
           if (item.user) {
             database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);
+            bumpAllTimeTotal(item.user, item.value);
           }
         }
         else if (item.type === 'manualAdd' && item.user) {
@@ -1299,6 +1347,7 @@
             if(committed){
               database.ref('totalCount').transaction((v) => (v || 0) + item.value);
               database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);
+              bumpAllTimeTotal(item.user, item.value);
             }
           });
         }
@@ -1334,7 +1383,7 @@
       users.slice(0, 4).forEach((userName, idx) => {
         const pill = document.createElement('div');
         pill.className = 'active-dhikr-pill';
-        pill.innerHTML = `📿 ${userName} <span>يصلي على النبي الآن</span>`;
+        pill.innerHTML = `📿 ${escapeHtml(userName)} <span>يصلي على النبي الآن</span>`;
         if(idx % 2 === 0){
           activeSideRight.appendChild(pill);
         } else {
@@ -1349,6 +1398,7 @@
         database.ref('totalCount').transaction((v) => (v || 0) + amount);
         if(currentUser) {
           database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + amount);
+          bumpAllTimeTotal(currentUser, amount);
         }
       } else {
         saveToOfflineQueue('tap', amount, currentUser);
@@ -1399,7 +1449,7 @@
           const isUser = name === currentUser;
           const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
           html += '<div class="leaderboard-item" style="' + (isUser ? 'background:rgba(201,161,90,0.18);border-radius:6px;padding:4px 8px;margin:2px 0;' : 'padding:4px 8px;') + '">' +
-            '<span><span class="lb-rank">' + medal + '</span> <span class="lb-name">' + name + (isUser ? ' ⭐' : '') + '</span></span>' +
+            '<span><span class="lb-rank">' + medal + '</span> <span class="lb-name">' + escapeHtml(name) + (isUser ? ' ⭐' : '') + '</span></span>' +
             '<span class="lb-count">' + Number(count).toLocaleString('en-US') + '</span></div>';
         });
         leaderboardBody.innerHTML = html;
@@ -1484,6 +1534,7 @@
         loadLeaderboardFromFirebase();
         if(currentUser) {
           loadWeeklyManualTotal();
+          loadAllTimeTotal();
         }
       } else {
         isFirebaseReady = false;
@@ -1558,6 +1609,7 @@
     loadTotalFromFirebase();
     if(currentUser) loadWeeklyManualTotal();
     render();
+    if(currentUser) loadAllTimeTotal();
     maybeShowNameOverlay();
 
     try {

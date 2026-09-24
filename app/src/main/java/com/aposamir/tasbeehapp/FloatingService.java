@@ -17,6 +17,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import androidx.core.content.ContextCompat;
 
 public class FloatingService extends Service {
 
@@ -119,11 +120,12 @@ public class FloatingService extends Service {
 
         applyVisualScale(scale);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(webReceiver, new IntentFilter("WEB_UPDATED"), Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(webReceiver, new IntentFilter("WEB_UPDATED"));
-        }
+        ContextCompat.registerReceiver(
+                this,
+                webReceiver,
+                new IntentFilter("WEB_UPDATED"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
 
         floatingView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
@@ -150,7 +152,9 @@ public class FloatingService extends Service {
                         return true;
                     case MotionEvent.ACTION_UP:
                         if (isClick) {
-                            sendBroadcast(new Intent("BUBBLE_TAPPED"));
+                            Intent tapIntent = new Intent("BUBBLE_TAPPED");
+                            tapIntent.setPackage(getPackageName());
+                            sendBroadcast(tapIntent);
                         }
                         return true;
                 }

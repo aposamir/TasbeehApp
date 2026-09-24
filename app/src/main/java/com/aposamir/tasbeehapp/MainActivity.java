@@ -15,6 +15,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,11 +37,15 @@ public class MainActivity extends AppCompatActivity {
 
         webView.addJavascriptInterface(new WebAppInterface(), "AndroidBridge");
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(bubbleReceiver, new IntentFilter("BUBBLE_TAPPED"), Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(bubbleReceiver, new IntentFilter("BUBBLE_TAPPED"));
-        }
+        // RECEIVER_NOT_EXPORTED عبر ContextCompat يمنع أي تطبيق آخر مثبّت
+        // بنفس الجهاز من إرسال بث مزوّر باسم BUBBLE_TAPPED (كان يعمل على
+        // كل الإصدارات قبل هذا التعديل بدون أي حماية على Android < 13).
+        ContextCompat.registerReceiver(
+                this,
+                bubbleReceiver,
+                new IntentFilter("BUBBLE_TAPPED"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
     }
 
     @Override
@@ -72,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
             prefs.edit().putInt("bubble_count", count).apply();
 
             Intent intent = new Intent("WEB_UPDATED");
+            intent.setPackage(getPackageName());
             intent.putExtra("count", count);
             sendBroadcast(intent);
         }
