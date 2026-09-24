@@ -1223,25 +1223,31 @@
     }
 
     // يعرض إجمالي مشاركة الاسم المسجَّل منذ أول استخدام (وليس بحدود
-    // الأسبوع الحالي فقط كما بقائمة الأوائل)، مخزَّن بـ users/<name>/
-    // allTimeTotal بقاعدة البيانات المشتركة — بحيث يبقى محفوظاً حتى لو
-    // تغيّر الجهاز أو أُعيد تثبيت التطبيق.
+    // الأسبوع الحالي فقط كما بقائمة الأوائل)، مخزَّن بـ allTimeTotals/<name>
+    // بقاعدة البيانات المشتركة — نفس المسار المستخدم بلوحة تحكم الإدارة،
+    // بحيث يبقى محفوظاً حتى لو تغيّر الجهاز أو أُعيد تثبيت التطبيق، ويطابق
+    // ما تراه المديرة بلوحة التحكم بالضبط.
     function loadAllTimeTotal(){
       if(!currentUser || !isFirebaseReady){
         allTimeTotalCard.style.display = 'none';
         return;
       }
       if(allTimeTotalRef) allTimeTotalRef.off();
-      allTimeTotalRef = database.ref('users/' + currentUser + '/allTimeTotal');
+      allTimeTotalRef = database.ref('allTimeTotals/' + currentUser);
       allTimeTotalCard.style.display = 'flex';
       allTimeTotalRef.on('value', (snap) => {
         allTimeTotalValue.textContent = (Number(snap.val()) || 0).toLocaleString('en-US');
       });
     }
 
-    function bumpAllTimeTotal(user, amount){
+    // isManual: true لو المصدر إضافة يدوية (يُسجَّل أيضاً بـ allTimeManualTotals
+    // كنظير لعلاقة leaderboard/weeklyManualAdditions الأسبوعية)، false لو ضغط مباشر.
+    function bumpAllTimeTotal(user, amount, isManual){
       if(!isFirebaseReady || !user) return;
-      database.ref('users/' + user + '/allTimeTotal').transaction((v) => (v || 0) + amount);
+      database.ref('allTimeTotals/' + user).transaction((v) => (v || 0) + amount);
+      if(isManual){
+        database.ref('allTimeManualTotals/' + user).transaction((v) => (v || 0) + amount);
+      }
     }
 
     function updateWeeklyLimitDisplay(){
@@ -1285,7 +1291,7 @@
           if(committed){
             database.ref('totalCount').transaction((v) => (v || 0) + val);
             database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + val);
-            bumpAllTimeTotal(currentUser, val);
+            bumpAllTimeTotal(currentUser, val, true);
             personal += val;
             personalSalawat += val;
             savePersonal();
@@ -1334,7 +1340,7 @@
           database.ref('totalCount').transaction((v) => (v || 0) + item.value);
           if (item.user) {
             database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);
-            bumpAllTimeTotal(item.user, item.value);
+            bumpAllTimeTotal(item.user, item.value, false);
           }
         }
         else if (item.type === 'manualAdd' && item.user) {
@@ -1347,7 +1353,7 @@
             if(committed){
               database.ref('totalCount').transaction((v) => (v || 0) + item.value);
               database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);
-              bumpAllTimeTotal(item.user, item.value);
+              bumpAllTimeTotal(item.user, item.value, true);
             }
           });
         }
@@ -1398,7 +1404,7 @@
         database.ref('totalCount').transaction((v) => (v || 0) + amount);
         if(currentUser) {
           database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + amount);
-          bumpAllTimeTotal(currentUser, amount);
+          bumpAllTimeTotal(currentUser, amount, false);
         }
       } else {
         saveToOfflineQueue('tap', amount, currentUser);
