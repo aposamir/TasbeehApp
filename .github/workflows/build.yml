@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,14 +23,22 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Generate release keystore
+      - name: Prepare signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          keytool -genkeypair -v \
-            -keystore app/release.keystore \
-            -alias tasbeehapp \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
-            -dname "CN=TasbeehApp, OU=Dev, O=aposamir, L=City, ST=State, C=SA"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
+            echo "Using the fixed signing key from the KEYSTORE_BASE64 secret"
+          else
+            echo "::warning::KEYSTORE_BASE64 secret is not set - signing with a new random key, so this APK cannot be installed over a previous version"
+            keytool -genkeypair -v \
+              -keystore app/release.keystore \
+              -alias tasbeehapp \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=TasbeehApp, OU=Dev, O=aposamir, L=City, ST=State, C=SA"
+          fi
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -50,8 +59,14 @@ jobs:
           name: TasbeehApp
           path: app/build/outputs/apk/release/
 
+      - name: Remove previous release so only the newest build remains
+        if: github.event_name != 'pull_request'
+        run: gh release delete latest --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish GitHub Release with APK
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest

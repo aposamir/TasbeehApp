@@ -19,8 +19,9 @@ android {
         applicationId "com.aposamir.tasbeehapp"
         minSdk 21
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        // Each CI build gets a higher version number, so phones treat it as an update
+        versionCode(Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1"))
+        versionName("1.0." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0"))
     }
 
     lint {
