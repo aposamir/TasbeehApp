@@ -662,7 +662,7 @@
 
     <div class="name-input-area">
       <div class="name-field-wrap">
-        <input type="text" id="userNameInput" placeholder="أدخل اسمك" maxlength="20">
+        <input type="text" id="userNameInput" placeholder="أدخل اسمك" maxlength="25">
         <span class="name-field-icon">✏️</span>
       </div>
       <button class="btn gold" id="setNameBtn">حفظ</button>
@@ -701,7 +701,7 @@
   <div class="confirm-box">
     <p class="name-overlay-poem">أهلاً وسهلاً بكم، أكرمنا باسمك الكريم، فبه سنرتقي،<br>فنحو المليار صلاة على الحبيب «صلاة ربي وسلامه عليه» نمضي.</p>
     <div class="name-input-area" style="margin-top:6px;">
-      <input type="text" id="nameOverlayInput" placeholder="✏️ اسمك الكريم" maxlength="20">
+      <input type="text" id="nameOverlayInput" placeholder="✏️ اسمك الكريم" maxlength="25">
     </div>
     <div class="confirm-actions" style="margin-top:14px;">
       <button class="btn gold" id="nameOverlaySaveBtn">✅ الحفظ والمتابعة</button>
@@ -1175,7 +1175,7 @@
     function setUserName(){
       const name = sanitizeKey(userNameInput.value);
       if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }
-      if(name.length > 20){ showToast('❌ الاسم طويل جداً'); return; }
+      if(name.length > 25){ showToast('❌ الاسم طويل جداً'); return; }
 
       if(!isFirebaseReady || !deviceId){
         showToast('❌ يلزم الاتصال بالإنترنت للتحقق من الاسم قبل الحفظ');
@@ -1203,7 +1203,7 @@
     function saveNameFromOverlay(){
       const name = sanitizeKey(nameOverlayInput.value);
       if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }
-      if(name.length > 20){ showToast('❌ الاسم طويل جداً'); return; }
+      if(name.length > 25){ showToast('❌ الاسم طويل جداً'); return; }
 
       if(!isFirebaseReady || !deviceId){
         showToast('❌ يلزم الاتصال بالإنترنت للتحقق من الاسم قبل الحفظ');
