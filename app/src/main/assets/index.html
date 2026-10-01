@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>مسبحة جامع عبد الرحمن بن عوف</title>
+<meta name="description" content="مسبحة رقمية مشتركة لأذكار وصلاة على النبي ﷺ مع عدّاد جماعي وقائمة أوائل أسبوعية">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="مسبحة جامع عبد الرحمن بن عوف">
+<meta property="og:title" content="مسبحة جامع عبد الرحمن بن عوف">
+<meta property="og:description" content="مسبحة رقمية مشتركة لأذكار وصلاة على النبي ﷺ مع عدّاد جماعي وقائمة أوائل أسبوعية">
+<meta property="og:url" content="https://aposamir.github.io/TasbeehApp/">
+<meta property="og:image" content="https://aposamir.github.io/TasbeehApp/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ar_AR">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0E2E2C">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -570,6 +581,7 @@
   ::-webkit-scrollbar{ width:3px; }
   ::-webkit-scrollbar-track{ background:transparent; }
   ::-webkit-scrollbar-thumb{ background:var(--gold); border-radius:9px; }
+  .tap-btn, .btn, .dhikr-chip, .total-reset{ touch-action: manipulation; }
 </style>
 </head>
 <body>
@@ -714,8 +726,26 @@
     measurementId: "G-P7ZWT4RHP7"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
+  // لو لم تُحمَّل مكتبة Firebase (شبكة ضعيفة، أو حجب داخل متصفح فيسبوك)
+  // يبقى التطبيق شغّالاً بوضع غير متصل بدل أن يتوقف السكربت كاملاً.
+  let database;
+  try {
+    if (typeof firebase === 'undefined') throw new Error('Firebase SDK not loaded');
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+  } catch (err) {
+    const makeNoopRef = () => {
+      const r = {
+        on(){ return r; },
+        off(){ return r; },
+        once(){ return Promise.resolve({ val(){ return null; } }); },
+        set(){ return Promise.reject(new Error('offline')); },
+        transaction(){ return Promise.resolve(); }
+      };
+      return r;
+    };
+    database = { ref: makeNoopRef };
+  }
 
   (function(){
     const tapBtn = document.getElementById('tapBtn');
@@ -928,6 +958,7 @@
       inAppBubbleEl.style.left = x + 'px';
       inAppBubbleEl.style.top = y + 'px';
     });
+    inAppBubbleEl.addEventListener('pointercancel', () => { bubbleDragging = false; });
     inAppBubbleEl.addEventListener('pointerup', (e) => {
       e.preventDefault();
       bubbleDragging = false;
@@ -1125,7 +1156,7 @@
 
     function finalizeSetUserName(name){
       currentUser = name;
-      localStorage.setItem(USER_KEY, name);
+      try { localStorage.setItem(USER_KEY, name); } catch(e) {}
       showUserNameBadge(name);
       showToast('✅ تم حفظ الاسم: ' + name);
 
@@ -1373,7 +1404,12 @@
     }
 
     function saveToOfflineQueue(type, value, user){
-      offlineQueue.push({type, value, user});
+      const last = offlineQueue[offlineQueue.length - 1];
+      if(type === 'tap' && last && last.type === 'tap' && last.user === user && last.value + value <= 99999){
+        last.value += value;
+      } else {
+        offlineQueue.push({type, value, user});
+      }
       try {
         localStorage.setItem('offline_queue', JSON.stringify(offlineQueue));
       } catch(e) {}
@@ -1543,6 +1579,16 @@
       }
     } catch(e) {}
 
+    function setOfflineStatus(){
+      onlineIndicator.className = 'status-offline';
+      onlineIndicator.textContent = '○';
+      connectionStatus.textContent = '⚠️ غير متصل';
+      connectionStatus.style.borderColor = '#e57373';
+      connectionStatus.style.color = '#e57373';
+      connectionStatus.style.background = 'rgba(229,115,115,0.15)';
+    }
+    setTimeout(() => { if(!isFirebaseReady) setOfflineStatus(); }, 10000);
+
     const connectedRef = database.ref('.info/connected');
     connectedRef.on('value', (snap) => {
       if (snap.val() === true) {
@@ -1562,12 +1608,7 @@
         }
       } else {
         isFirebaseReady = false;
-        onlineIndicator.className = 'status-offline';
-        onlineIndicator.textContent = '○';
-        connectionStatus.textContent = '⚠️ غير متصل';
-        connectionStatus.style.borderColor = '#e57373';
-        connectionStatus.style.color = '#e57373';
-        connectionStatus.style.background = 'rgba(229,115,115,0.15)';
+        setOfflineStatus();
 
         try {
           const saved = localStorage.getItem('offline_total');
