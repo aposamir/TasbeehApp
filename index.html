@@ -1,10 +1,1692 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>مسبحة جامع عبد الرحمن بن عوف</title>
-<meta http-equiv="refresh" content="0; url=docs/index.html">
-<link rel="canonical" href="docs/index.html">
+<meta name="description" content="مسبحة رقمية مشتركة لأذكار وصلاة على النبي ﷺ مع عدّاد جماعي وقائمة أوائل أسبوعية">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="مسبحة جامع عبد الرحمن بن عوف">
+<meta property="og:title" content="مسبحة جامع عبد الرحمن بن عوف">
+<meta property="og:description" content="مسبحة رقمية مشتركة لأذكار وصلاة على النبي ﷺ مع عدّاد جماعي وقائمة أوائل أسبوعية">
+<meta property="og:url" content="https://aposamir.github.io/TasbeehApp/">
+<meta property="og:image" content="https://aposamir.github.io/TasbeehApp/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ar_AR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="docs/manifest.json">
+<meta name="theme-color" content="#0E2E2C">
+<link rel="apple-touch-icon" href="docs/icon-180.png">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --night: #0E2E2C;
+    --night-deep: #081C1B;
+    --gold: #C9A15A;
+    --gold-soft: #E4C888;
+    --sage: #6E9B8C;
+    --cream: #F3ECDD;
+    --line: rgba(201,161,90,0.22);
+    --bubble-size: 100px;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background: radial-gradient(1200px 800px at 50% -10%, #133A37 0%, var(--night) 45%, var(--night-deep) 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--cream);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
+    overflow-x:hidden;
+    padding: 10px 10px 14px;
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(30deg, var(--line) 1px, transparent 1px),
+      linear-gradient(150deg, var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 110px;
+    opacity:0.35;
+    pointer-events:none;
+    z-index:0;
+  }
+  .wrap{ position:relative; z-index:1; width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; flex:1; }
+  header{
+    text-align:center;
+    margin-top:4px;
+    padding: 0 6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    white-space:nowrap;
+  }
+  header h1{
+    font-family: serif;
+    font-weight:700;
+    font-size: 1.35rem;
+    line-height:1.2;
+    margin:0;
+    color: var(--gold-soft);
+    text-shadow: 0 0 18px rgba(228,200,136,0.25);
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .live-badge{
+    background:rgba(76,175,80,0.15);
+    border:1px solid #4CAF50;
+    border-radius:8px;
+    padding:4px 10px;
+    font-size:0.65rem;
+    color:#81C784;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .dhikr-select{
+    margin-top:8px;
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .dhikr-chip{
+    background: rgba(255,255,255,0.04);
+    border:1px solid var(--line);
+    color: var(--cream);
+    padding:5px 12px;
+    border-radius:999px;
+    font-size:0.7rem;
+    cursor:pointer;
+    transition: all .2s ease;
+    text-align:center;
+  }
+  .dhikr-chip.active{
+    background: var(--gold);
+    color: var(--night-deep);
+    border-color: var(--gold);
+    font-weight:700;
+  }
+  .dhikr-chip .badge-inf{
+    background: rgba(201,161,90,0.2);
+    border-radius:999px;
+    padding:1px 8px;
+    font-size:0.55rem;
+    color: var(--gold-soft);
+    margin-right:3px;
+  }
+  .dhikr-chip.active .badge-inf{
+    background: rgba(14,46,44,0.3);
+    color: var(--night-deep);
+  }
+  .name-input-area{
+    display:flex;
+    gap:6px;
+    margin-top:8px;
+    flex-wrap:nowrap;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+  }
+  .name-field-wrap{
+    position:relative;
+    flex:1 1 0;
+    min-width:70px;
+  }
+  .name-input-area input{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(201,161,90,0.5);
+    border-radius:10px;
+    padding:6px 22px 6px 10px;
+    color:var(--cream);
+    font-size:0.85rem;
+    width:100%;
+    text-align:center;
+    -webkit-user-select:text;
+    user-select:text;
+  }
+  .name-field-icon{
+    position:absolute;
+    top:50%;
+    right:6px;
+    transform:translateY(-50%);
+    font-size:0.72rem;
+    opacity:0.85;
+    pointer-events:none;
+  }
+  .name-input-area input:focus{
+    outline:2px solid var(--gold);
+    border-color:transparent;
+  }
+  .name-input-area .btn{
+    padding:6px 10px;
+    font-size:0.72rem;
+    flex:0 0 auto;
+    white-space:nowrap;
+  }
+  .user-badge{
+    background:rgba(201,161,90,0.15);
+    border:1px solid var(--gold);
+    border-radius:10px;
+    padding:6px 10px;
+    font-size:0.8rem;
+    line-height:1.2;
+    color:var(--gold-soft);
+    flex:1 1 0;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-align:center;
+    box-sizing:border-box;
+  }
+  #nameOverlayInput{
+    width:80%;
+    max-width:260px;
+    font-size:1rem;
+    padding:10px 16px;
+  }
+  .counter-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 4px;
+    padding: 0 2px;
+  }
+  .counter-zone{
+    position:relative;
+    width: min(64vw, 230px);
+    height: min(64vw, 230px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink: 0;
+    margin: 0 auto;
+  }
+  .beads{ position:absolute; inset:0; pointer-events:none; }
+  .bead{
+    position:absolute;
+    width:10px; height:10px;
+    border-radius:50%;
+    background: rgba(201,161,90,0.18);
+    border:1px solid rgba(201,161,90,0.3);
+    transform: translate(-50%,-50%);
+    transition: background .25s ease, box-shadow .25s ease;
+  }
+  .bead.filled{
+    background: var(--gold);
+    box-shadow: 0 0 10px 2px rgba(201,161,90,0.55);
+    border-color: var(--gold);
+  }
+  .tap-btn{
+    position:relative;
+    z-index:2;
+    width: 62%;
+    height: 62%;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #1C4A45, var(--night-deep) 70%);
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 0 6px rgba(201,161,90,0.06), inset 0 0 30px rgba(0,0,0,0.4);
+    color: var(--cream);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    user-select:none;
+    transition: transform .08s ease;
+  }
+  .tap-btn:active{ transform: scale(0.94); }
+  .tap-count{
+    font-family: serif;
+    font-size: 2.5rem;
+    font-weight:700;
+    color: var(--gold-soft);
+    line-height:1;
+  }
+  .tap-target{
+    margin-top:2px;
+    font-size:0.7rem;
+    color: var(--sage);
+  }
+  .tap-hint{
+    margin-top:4px;
+    font-size:1.3rem;
+    color: var(--gold-soft);
+  }
+  .cycles{
+    margin-top:2px;
+    font-size:0.7rem;
+    color: var(--sage);
+    min-height:16px;
+    text-align:center;
+  }
+  .active-side-container {
+    width: 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+    z-index: 3;
+    margin-bottom: 6px;
+    min-height: 40px;
+  }
+  .active-side-container.right {
+    align-items: flex-end;
+    text-align: right;
+  }
+  .active-side-container.left {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .active-dhikr-pill {
+    background: rgba(14, 46, 44, 0.95);
+    border: 1px solid var(--gold);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    padding: 4px 6px;
+    border-radius: 8px;
+    font-size: 0.62rem;
+    color: var(--gold-soft);
+    line-height: 1.2;
+    animation: fadeInSlide 0.3s ease-out;
+    backdrop-filter: blur(4px);
+    width: 100%;
+    word-break: break-word;
+  }
+  .active-dhikr-pill span {
+    color: var(--cream);
+    display: block;
+    font-size: 0.52rem;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
+  @keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .controls{
+    display:flex;
+    gap:8px;
+    margin-top:6px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .btn{
+    background: rgba(255,255,255,0.05);
+    border:1px solid var(--line);
+    color: var(--cream);
+    padding:8px 16px;
+    border-radius:12px;
+    font-size:0.8rem;
+    cursor:pointer;
+    transition: background .2s ease;
+  }
+  .btn:hover{ background: rgba(255,255,255,0.09); }
+  .btn.danger{ border-color: rgba(201,90,90,0.75); color:#e0a3a3; }
+  .btn.gold{ border-color: var(--gold); color: var(--gold-soft); }
+  .btn.success{ border-color: #4CAF50; color: #81C784; }
+  .btn.info{ border-color: #42A5F5; color: #64B5F6; }
+  .total-card{
+    width:100%;
+    max-width:440px;
+    margin-top:6px;
+    background: rgba(255,255,255,0.05);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  }
+  .total-label{ font-size:0.75rem; color: var(--sage); }
+  .total-value{
+    font-family: serif;
+    font-size:1.5rem;
+    color: var(--gold-soft);
+    font-weight:700;
+  }
+  .total-reset{
+    background:none; border:none; color: rgba(243,236,221,0.4);
+    font-size:0.65rem; cursor:pointer; text-decoration:underline;
+  }
+  .personal-values-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .personal-sub{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .personal-sub .total-label{
+    font-size:0.62rem;
+    text-align:center;
+  }
+  .personal-sub .total-value{
+    font-size:1.1rem;
+  }
+  .personal-divider{
+    width:1px;
+    height:28px;
+    background: var(--line);
+  }
+  .goal-wrap{ width:100%; }
+  .goal-track{
+    width:100%; height:5px; border-radius:999px;
+    background: rgba(255,255,255,0.06);
+    overflow:hidden;
+    margin-top:6px;
+  }
+  .goal-fill{
+    height:100%; width:0%;
+    background: linear-gradient(90deg, var(--sage), var(--gold));
+    border-radius:999px;
+    transition: width .4s ease;
+  }
+  .goal-note{
+    margin-top:4px;
+    font-size:0.6rem;
+    color: rgba(243,236,221,0.45);
+    text-align:left;
+    direction:ltr;
+  }
+  .manual-input-area{
+    display:flex;
+    gap:6px;
+    margin-top:8px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+  }
+  .manual-input-area input{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(201,161,90,0.5);
+    border-radius:10px;
+    padding:6px 10px;
+    color:var(--cream);
+    font-size:0.85rem;
+    width:100px;
+    height:34px;
+    text-align:center;
+    direction:ltr;
+    -webkit-user-select:text;
+    user-select:text;
+  }
+  .manual-input-area input:focus{
+    outline:2px solid var(--gold);
+    border-color:transparent;
+  }
+  .manual-input-area input::placeholder{
+    color:rgba(243,236,221,0.3);
+  }
+  .manual-input-area .btn{
+    padding:6px 14px;
+    font-size:0.75rem;
+    height:34px;
+    box-sizing:border-box;
+    display:inline-flex;
+    align-items:center;
+  }
+  .manual-label{
+    font-size:0.6rem;
+    color:var(--sage);
+    width:100%;
+    text-align:center;
+    margin-bottom:2px;
+  }
+  .weekly-limit-info{
+    font-size:0.6rem;
+    color:var(--gold-soft);
+    text-align:center;
+    margin-top:2px;
+  }
+  .leaderboard-bar{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-top:6px;
+    flex-wrap:wrap;
+  }
+  .leaderboard{
+    width:100%;
+    margin-top:14px;
+    max-height:180px;
+    overflow-y:auto;
+  }
+  .leaderboard h4{
+    font-family: serif;
+    color:var(--gold-soft);
+    margin:0 0 6px 0;
+    text-align:center;
+    font-size:0.9rem;
+  }
+  .leaderboard-item{
+    display:flex;
+    justify-content:space-between;
+    padding:4px 8px;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    font-size:0.75rem;
+  }
+  .leaderboard-item:last-child{ border-bottom:none; }
+  .lb-rank{ color:var(--gold); margin-left:4px; }
+  .lb-name{ color:var(--cream); }
+  .lb-count{ color:var(--gold-soft); font-weight:700; }
+  .leaderboard-empty{
+    text-align:center;
+    color:rgba(243,236,221,0.4);
+    font-size:0.7rem;
+    padding:6px 0;
+  }
+  .week-info{
+    font-size:0.6rem;
+    color:var(--sage);
+    text-align:center;
+    margin-top:2px;
+  }
+  .status-online{
+    color:#81C784;
+    font-size:0.55rem;
+    margin-right:4px;
+  }
+  .status-offline{
+    color:#e57373;
+    font-size:0.55rem;
+    margin-right:4px;
+  }
+  .highlight-gold{ color:var(--gold-soft); }
+  footer{ margin-top:14px; font-size:0.65rem; color:rgba(243,236,221,0.4); text-align:center; line-height:1.6; }
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--gold); color:var(--night-deep);
+    padding:7px 16px; border-radius:999px; font-size:0.8rem; font-weight:700;
+    opacity:0; transition:all .35s ease; z-index:5; pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .confirm-overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10000;
+    padding:20px;
+  }
+  .confirm-overlay.show{ display:flex; }
+  .confirm-box{
+    background: linear-gradient(180deg, #133A37, var(--night-deep));
+    border:1px solid var(--gold);
+    border-radius:14px;
+    padding:18px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  .confirm-box p{
+    color: var(--cream);
+    font-size:0.85rem;
+    line-height:1.7;
+    margin:0 0 14px 0;
+    white-space:pre-line;
+  }
+  .confirm-actions{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+  }
+  .confirm-actions .btn{ flex:1; }
+  .name-overlay-poem{
+    font-family: serif;
+    color: var(--gold-soft);
+    font-size:0.95rem;
+    line-height:2;
+    text-shadow: 0 0 14px rgba(228,200,136,0.2);
+  }
+  .in-app-bubble{
+    position:fixed;
+    left: 16px; top: 90px;
+    width: var(--bubble-size);
+    height: var(--bubble-size);
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #1C4A45, var(--night-deep) 70%);
+    border:2px solid var(--gold);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 0 4px rgba(201,161,90,0.08);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--gold-soft);
+    font-family: serif;
+    font-weight:700;
+    font-size:1.4rem;
+    z-index:9999;
+    cursor:pointer;
+    user-select:none;
+    touch-action:none;
+  }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+  ::-webkit-scrollbar{ width:3px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--gold); border-radius:9px; }
+  .tap-btn, .btn, .dhikr-chip, .total-reset{ touch-action: manipulation; }
+</style>
 </head>
-<body><a href="docs/index.html">فتح مسبحة جامع عبد الرحمن بن عوف</a></body>
-</html>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="appTitle">📿 مسبحة جامع عبد الرحمن بن عوف 🕌</h1>
+  </header>
+
+  <div class="dhikr-select" id="dhikrSelect">
+    <div class="dhikr-chip" data-dhikr="سبحان الله" data-target="33" data-add-total="false">سبحان الله <span class="badge-inf">33</span></div>
+    <div class="dhikr-chip" data-dhikr="الحمد لله" data-target="33" data-add-total="false">الحمد لله <span class="badge-inf">33</span></div>
+    <div class="dhikr-chip" data-dhikr="الله أكبر" data-target="33" data-add-total="false">الله أكبر <span class="badge-inf">33</span></div>
+    <div class="dhikr-chip" data-dhikr="لا إله إلا الله" data-target="100" data-add-total="false">لا إله إلا الله <span class="badge-inf">100</span></div>
+    <div class="dhikr-chip" data-dhikr="استغفر الله" data-target="100" data-add-total="false">استغفر الله <span class="badge-inf">100</span></div>
+    <div class="dhikr-chip active" data-dhikr="اللهم صل على محمد وآله وسلم" data-target="∞" data-add-total="true">اللهم صل على محمد وآله وسلم <span class="badge-inf">∞</span></div>
+  </div>
+
+  <div class="counter-wrapper">
+    <div class="active-side-container right" id="activeSideRight"></div>
+
+    <div class="counter-zone">
+      <div class="beads" id="beads"></div>
+      <div class="tap-btn" id="tapBtn">
+        <div class="tap-count" id="tapCount">0</div>
+        <div class="tap-target" id="tapTarget">من 33</div>
+      </div>
+    </div>
+
+    <div class="active-side-container left" id="activeSideLeft"></div>
+  </div>
+
+  <div class="tap-hint">👆 اضغط للعدّ</div>
+  <div class="cycles" id="cyclesLabel"></div>
+
+  <div class="controls">
+    <button class="btn danger" id="bubbleToggleBtn">📿 تفعيل الفقاعة</button>
+    <button class="btn danger" id="resetBtn">👆 تصفير</button>
+    <button class="btn danger" id="bubbleResetBtn">🔄 تصفير الفقاعة</button>
+  </div>
+
+  <div class="total-card">
+    <div class="personal-values-row">
+      <div class="personal-sub">
+        <div class="total-label">📱 كل الأذكار</div>
+        <div class="total-value" id="personalValue">0</div>
+      </div>
+      <div class="personal-divider"></div>
+      <div class="personal-sub">
+        <div class="total-label">📿 الصلاة على النبي ﷺ</div>
+        <div class="total-value" id="personalSalawatValue">0</div>
+      </div>
+    </div>
+    <button class="total-reset" id="personalResetBtn">تصفير</button>
+  </div>
+
+  <div class="total-card" id="allTimeTotalCard" style="display:none;">
+    <div class="total-label">🕋 إجمالي مشاركتك منذ التسجيل</div>
+    <div class="total-value" id="allTimeTotalValue">0</div>
+  </div>
+
+  <div class="total-card" style="flex-direction:column; align-items:stretch; gap:4px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
+      <div class="total-label">📿 <span class="highlight-gold">العدد الكلي للصلاة على النبي ﷺ</span> <span id="onlineIndicator" class="status-offline">○</span></div>
+      <div class="total-value" id="totalValue">0</div>
+    </div>
+    <div class="goal-wrap">
+      <div class="goal-track"><div class="goal-fill" id="goalFill"></div></div>
+      <div class="goal-note" id="goalNote">الهدف: 1,000,000,000</div>
+    </div>
+
+    <div class="manual-input-area">
+      <div class="manual-label">➕ لإضافة عدد الصلوات الخارجية (حد أقصى 99,999 في الأسبوع)</div>
+      <input type="number" id="manualInput" min="1" max="99999" maxlength="5" inputmode="numeric" placeholder="0">
+      <button class="btn success" id="manualAddBtn">➕ إضافة</button>
+      <button class="btn danger" id="manualClearBtn">✖</button>
+    </div>
+    <div class="weekly-limit-info" id="weeklyLimitInfo">المتبقي لهذا الأسبوع: 99,999</div>
+
+    <div class="name-input-area">
+      <div class="name-field-wrap">
+        <input type="text" id="userNameInput" placeholder="أدخل اسمك" maxlength="30">
+        <span class="name-field-icon">✏️</span>
+      </div>
+      <button class="btn gold" id="setNameBtn">حفظ</button>
+      <span id="userNameDisplay" class="user-badge" style="display:none;"></span>
+    </div>
+
+    <div class="leaderboard-bar">
+      <button class="btn info" id="toggleLeaderboardBtn" style="font-size:0.75rem;padding:6px 14px;">🏆 الأوائل في هذا الأسبوع هم...</button>
+      <span class="live-badge" id="connectionStatus">● جاري الاتصال...</span>
+    </div>
+
+    <div id="leaderboardContainer" style="display:none; width:100%;">
+      <div class="leaderboard">
+        <h4>🏆 الأوائل هذا الأسبوع</h4>
+        <div class="week-info" id="weekInfo"></div>
+        <div id="leaderboardBody"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p id="confirmMessage"></p>
+    <div class="confirm-actions">
+      <button class="btn gold" id="confirmOkBtn">موافق</button>
+      <button class="btn danger" id="confirmCancelBtn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="nameOverlay">
+  <div class="confirm-box">
+    <p class="name-overlay-poem">أهلاً وسهلاً بكم، أكرمنا باسمك الكريم، فبه سنرتقي،<br>فنحو المليار صلاة على الحبيب «صلاة ربي وسلامه عليه» نمضي.</p>
+    <div class="name-input-area" style="margin-top:6px;">
+      <input type="text" id="nameOverlayInput" placeholder="✏️ اسمك الكريم" maxlength="30">
+    </div>
+    <div class="confirm-actions" style="margin-top:14px;">
+      <button class="btn gold" id="nameOverlaySaveBtn">✅ الحفظ والمتابعة</button>
+      <button class="btn" id="nameOverlaySkipBtn">لاحقًا</button>
+    </div>
+  </div>
+</div>
+
+<div id="inAppBubble" class="in-app-bubble" style="display:none;">
+  <span id="inAppBubbleCount">0</span>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDMbK1-8zrba_bDtFPl6w33uDBZCN5fARI",
+    authDomain: "billion-salawat.firebaseapp.com",
+    databaseURL: "https://billion-salawat-default-rtdb.firebaseio.com",
+    projectId: "billion-salawat",
+    storageBucket: "billion-salawat.firebasestorage.app",
+    messagingSenderId: "863812009619",
+    appId: "1:863812009619:web:6e83d2e575372438e6d766",
+    measurementId: "G-P7ZWT4RHP7"
+  };
+
+  // لو لم تُحمَّل مكتبة Firebase (شبكة ضعيفة، أو حجب داخل متصفح فيسبوك)
+  // يبقى التطبيق شغّالاً بوضع غير متصل بدل أن يتوقف السكربت كاملاً.
+  let database;
+  try {
+    if (typeof firebase === 'undefined') throw new Error('Firebase SDK not loaded');
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+  } catch (err) {
+    const makeNoopRef = () => {
+      const r = {
+        on(){ return r; },
+        off(){ return r; },
+        once(){ return Promise.resolve({ val(){ return null; } }); },
+        set(){ return Promise.reject(new Error('offline')); },
+        transaction(){ return Promise.resolve(); }
+      };
+      return r;
+    };
+    database = { ref: makeNoopRef };
+  }
+
+  (function(){
+    const tapBtn = document.getElementById('tapBtn');
+    const tapCount = document.getElementById('tapCount');
+    const tapTarget = document.getElementById('tapTarget');
+    const beadsEl = document.getElementById('beads');
+    const totalValue = document.getElementById('totalValue');
+    const goalFill = document.getElementById('goalFill');
+    const goalNote = document.getElementById('goalNote');
+    const personalValue = document.getElementById('personalValue');
+    const personalSalawatValue = document.getElementById('personalSalawatValue');
+    const allTimeTotalCard = document.getElementById('allTimeTotalCard');
+    const allTimeTotalValue = document.getElementById('allTimeTotalValue');
+    const personalResetBtn = document.getElementById('personalResetBtn');
+    const cyclesLabel = document.getElementById('cyclesLabel');
+    const resetBtn = document.getElementById('resetBtn');
+    const dhikrSelect = document.getElementById('dhikrSelect');
+    const toast = document.getElementById('toast');
+    const manualInput = document.getElementById('manualInput');
+    const manualAddBtn = document.getElementById('manualAddBtn');
+    const manualClearBtn = document.getElementById('manualClearBtn');
+    const userNameInput = document.getElementById('userNameInput');
+    const setNameBtn = document.getElementById('setNameBtn');
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const toggleLeaderboardBtn = document.getElementById('toggleLeaderboardBtn');
+    const leaderboardContainer = document.getElementById('leaderboardContainer');
+    const leaderboardBody = document.getElementById('leaderboardBody');
+    const weekInfo = document.getElementById('weekInfo');
+    const onlineIndicator = document.getElementById('onlineIndicator');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const weeklyLimitInfo = document.getElementById('weeklyLimitInfo');
+    const activeSideRight = document.getElementById('activeSideRight');
+    const activeSideLeft = document.getElementById('activeSideLeft');
+    const bubbleToggleBtn = document.getElementById('bubbleToggleBtn');
+    const bubbleResetBtn = document.getElementById('bubbleResetBtn');
+    const inAppBubbleEl = document.getElementById('inAppBubble');
+    const inAppBubbleCountEl = document.getElementById('inAppBubbleCount');
+    const confirmOverlay = document.getElementById('confirmOverlay');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmOkBtn = document.getElementById('confirmOkBtn');
+    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+    const nameOverlay = document.getElementById('nameOverlay');
+    const nameOverlayInput = document.getElementById('nameOverlayInput');
+    const nameOverlaySaveBtn = document.getElementById('nameOverlaySaveBtn');
+    const nameOverlaySkipBtn = document.getElementById('nameOverlaySkipBtn');
+
+    let current = 0, total = 0, personal = 0, personalSalawat = 0, cyclesThisSession = 0;
+    let bubbleCount = 0;
+    let activeDhikr = "اللهم صل على محمد وآله وسلم", activeTarget = Infinity, isInfinite = true, addToTotal = true;
+    let currentUser = "", isFirebaseReady = false;
+    let bubbleEnabled = false;
+    let bubbleType = '';
+    let deviceId = "";
+    let serverTimeOffsetMs = 0;
+    const NATIVE_BUBBLE_SCALE = 7 / 9;
+    const DEVICE_ID_KEY = 'tasbeeh_device_id';
+    const BUBBLE_STATE_KEY = 'tasbeeh_bubble_enabled';
+    const BUBBLE_COUNT_KEY = 'tasbeeh_bubble_count';
+    let isSyncingQueue = false;
+    let currentWeeklyRef = null;
+    let totalRef = null;
+    let leadRef = null;
+    let allTimeTotalRef = null;
+
+    let previousScores = {};
+    let isFirstLeadLoad = true;
+    // Previous display order, used to break ties: whoever reached a score
+    // first keeps the higher rank until someone exceeds it by at least 1.
+    let lastRankOrder = [];
+    let activeUsersTimers = {};
+
+    const PERSONAL_KEY = 'tasbeeh_personal_count';
+    const PERSONAL_SALAWAT_KEY = 'tasbeeh_personal_salawat_count';
+    const USER_KEY = 'tasbeeh_user_name';
+    const TOTAL_GOAL = 1000000000;
+    const WEEKLY_MANUAL_LIMIT = 99999;
+    let offlineQueue = [];
+    let weeklyManualTotal = 0;
+
+    // يهرّب أي نص يأتي من قاعدة بيانات مشتركة (اسم مستخدم آخر مثلاً) قبل
+    // إدراجه بـ innerHTML، لمنع XSS لو احتوى الاسم وسوم HTML.
+    function escapeHtml(value){
+      if(value === null || value === undefined) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Tapping a field selects its whole value, so typing replaces it directly;
+    // leaving without typing keeps the original value untouched.
+    ['manualInput', 'userNameInput', 'nameOverlayInput'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('focus', () => el.select());
+    });
+
+    function showToast(msg, durationMs){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => toast.classList.remove('show'), durationMs || 2200);
+    }
+
+    let _confirmResolve = null;
+    function customConfirm(message){
+      return new Promise((resolve) => {
+        _confirmResolve = resolve;
+        confirmMessage.textContent = message;
+        confirmOverlay.classList.add('show');
+      });
+    }
+    confirmOkBtn.addEventListener('click', () => {
+      confirmOverlay.classList.remove('show');
+      if(_confirmResolve) _confirmResolve(true);
+      _confirmResolve = null;
+    });
+    confirmCancelBtn.addEventListener('click', () => {
+      confirmOverlay.classList.remove('show');
+      if(_confirmResolve) _confirmResolve(false);
+      _confirmResolve = null;
+    });
+
+    function getOrCreateDeviceId(){
+      try {
+        let id = localStorage.getItem(DEVICE_ID_KEY);
+        if(!id){
+          id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+          localStorage.setItem(DEVICE_ID_KEY, id);
+        }
+        return id;
+      } catch(e){
+        return 'dev_' + Date.now().toString(36);
+      }
+    }
+
+    function updateBubbleButtons(){
+      bubbleToggleBtn.textContent = bubbleEnabled ? '🚫 اخفاء الفقاعة' : '📿 تفعيل الفقاعة';
+    }
+
+    function hideAllBubbleUI(){
+      hideInAppBubbleUI();
+      if(window.AndroidBridge && typeof AndroidBridge.hideBubble === 'function'){
+        try{ AndroidBridge.hideBubble(); }catch(e){}
+      }
+    }
+
+    function saveBubbleState(){
+      try { localStorage.setItem(BUBBLE_STATE_KEY, bubbleEnabled ? '1' : '0'); } catch(e){}
+    }
+
+    function saveBubbleCount(){
+      try { localStorage.setItem(BUBBLE_COUNT_KEY, String(bubbleCount)); } catch(e){}
+    }
+
+    function loadBubbleState(){
+      try {
+        bubbleCount = parseInt(localStorage.getItem(BUBBLE_COUNT_KEY), 10) || 0;
+      } catch(e){
+        bubbleCount = 0;
+      }
+      bubbleEnabled = false;
+      bubbleType = '';
+      hideAllBubbleUI();
+      updateBubbleButtons();
+    }
+
+    function updateBubbleCountDisplay(){
+      inAppBubbleCountEl.textContent = bubbleCount;
+      const len = String(bubbleCount).length;
+      const size = len >= 6 ? '0.85rem' : len >= 5 ? '1.05rem' : '1.4rem';
+      inAppBubbleEl.style.fontSize = size;
+    }
+
+    function showInAppBubbleUI(){
+      updateBubbleCountDisplay();
+      inAppBubbleEl.style.display = 'flex';
+    }
+
+    function hideInAppBubbleUI(){
+      inAppBubbleEl.style.display = 'none';
+    }
+
+    let bubbleDragging = false, bubbleDragMoved = false, bubbleDragOffsetX = 0, bubbleDragOffsetY = 0;
+    let bubbleDragStartX = 0, bubbleDragStartY = 0;
+    const BUBBLE_DRAG_THRESHOLD = 8;
+    inAppBubbleEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      bubbleDragging = true;
+      bubbleDragMoved = false;
+      bubbleDragStartX = e.clientX;
+      bubbleDragStartY = e.clientY;
+      const rect = inAppBubbleEl.getBoundingClientRect();
+      bubbleDragOffsetX = e.clientX - rect.left;
+      bubbleDragOffsetY = e.clientY - rect.top;
+      try { inAppBubbleEl.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    inAppBubbleEl.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+    inAppBubbleEl.addEventListener('pointermove', (e) => {
+      if(!bubbleDragging) return;
+      const movedDist = Math.hypot(e.clientX - bubbleDragStartX, e.clientY - bubbleDragStartY);
+      if(movedDist > BUBBLE_DRAG_THRESHOLD){
+        bubbleDragMoved = true;
+      }
+      let x = e.clientX - bubbleDragOffsetX;
+      let y = e.clientY - bubbleDragOffsetY;
+      x = Math.max(0, Math.min(window.innerWidth - inAppBubbleEl.offsetWidth, x));
+      y = Math.max(0, Math.min(window.innerHeight - inAppBubbleEl.offsetHeight, y));
+      inAppBubbleEl.style.left = x + 'px';
+      inAppBubbleEl.style.top = y + 'px';
+    });
+    inAppBubbleEl.addEventListener('pointercancel', () => { bubbleDragging = false; });
+    inAppBubbleEl.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      bubbleDragging = false;
+      if(!bubbleDragMoved){
+        tap();
+      }
+    });
+
+    function reconcileBubbleMode(){
+      if(!bubbleEnabled){ hideAllBubbleUI(); bubbleType = ''; return; }
+
+      const hasPermFn = window.AndroidBridge && typeof AndroidBridge.hasOverlayPermission === 'function';
+      const hasPermission = hasPermFn ? !!AndroidBridge.hasOverlayPermission() : false;
+      const canUseNative = hasPermission && window.AndroidBridge && typeof AndroidBridge.showOverlayBubble === 'function';
+      const targetType = canUseNative ? 'native' : 'inapp';
+
+      hideAllBubbleUI();
+      if(targetType === 'native'){
+        AndroidBridge.showOverlayBubble(NATIVE_BUBBLE_SCALE);
+      } else {
+        showInAppBubbleUI();
+      }
+      bubbleType = targetType;
+    }
+
+    function enableBubble(){
+      bubbleEnabled = true;
+      saveBubbleState();
+      bubbleType = '';
+      reconcileBubbleMode();
+      updateBubbleButtons();
+      render();
+
+      if(bubbleType === 'native'){
+        showToast('📿 تم تفعيل الفقاعة فوق جميع التطبيقات');
+      } else {
+        showToast('📿 تم تفعيل الفقاعة داخل التطبيق');
+        if(window.AndroidBridge && typeof AndroidBridge.requestOverlayPermission === 'function'){
+          const hasPermFn = typeof AndroidBridge.hasOverlayPermission === 'function';
+          const hasPermission = hasPermFn ? !!AndroidBridge.hasOverlayPermission() : false;
+          if(!hasPermission) AndroidBridge.requestOverlayPermission();
+        }
+      }
+    }
+
+    function disableBubble(){
+      bubbleEnabled = false;
+      saveBubbleState();
+      hideAllBubbleUI();
+      bubbleType = '';
+      updateBubbleButtons();
+      showToast('🚫 تم إخفاء الفقاعة');
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible' && bubbleEnabled) reconcileBubbleMode();
+    });
+    window.addEventListener('focus', () => {
+      if(bubbleEnabled) reconcileBubbleMode();
+    });
+
+    function serverNow(){
+      return new Date(Date.now() + serverTimeOffsetMs);
+    }
+
+    function getWeekStartSaturday(date = serverNow()){
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      const day = d.getDay();
+      const diff = (day + 1) % 7;
+      d.setDate(d.getDate() - diff);
+      return d;
+    }
+
+    function getWeekNumber(){
+      const satStart = getWeekStartSaturday();
+      const year = satStart.getFullYear();
+      const jan1 = new Date(year, 0, 1);
+      const diffToFirstSaturday = (6 - jan1.getDay() + 7) % 7;
+      const firstSaturday = new Date(year, 0, 1 + diffToFirstSaturday);
+      const diffDays = Math.round((satStart - firstSaturday) / 86400000);
+      let weekNum = Math.floor(diffDays / 7) + 1;
+      if(weekNum < 1) weekNum = 1;
+      return weekNum;
+    }
+
+    function getCurrentWeekKey(){
+      const satStart = getWeekStartSaturday();
+      return 'week_' + getWeekNumber() + '_' + satStart.getFullYear();
+    }
+
+    function formatDateAr(d){
+      return d.toLocaleDateString('ar-EG', { day:'2-digit', month:'2-digit', year:'numeric' });
+    }
+
+    function buildBeads(n){
+      beadsEl.innerHTML = '';
+      if(n === 0 || isInfinite) n = 33;
+      const cx = 50, cy = 50, r = 46;
+      const count = Math.min(n, 100);
+      for(let i = 0; i < count; i++){
+        const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
+        const x = cx + r * Math.cos(angle), y = cy + r * Math.sin(angle);
+        const b = document.createElement('div');
+        b.className = 'bead';
+        b.style.left = x + '%';
+        b.style.top = y + '%';
+        beadsEl.appendChild(b);
+      }
+    }
+
+    function updateBeads(){
+      const beads = beadsEl.children;
+      const limit = isInfinite ? beads.length : activeTarget;
+      for(let i = 0; i < beads.length; i++){
+        beads[i].classList.toggle('filled', i < current && i < limit);
+      }
+    }
+
+    function renderGoal(){
+      const pct = Math.min(100, (total / TOTAL_GOAL) * 100);
+      goalFill.style.width = pct.toFixed(6) + '%';
+      goalNote.textContent = total.toLocaleString('en-US') + ' / ' + TOTAL_GOAL.toLocaleString('en-US') + ' (' + pct.toFixed(6) + '%)';
+    }
+
+    function render(){
+      tapCount.textContent = current;
+      tapTarget.textContent = isInfinite ? '∞' : 'من ' + activeTarget;
+      totalValue.textContent = total.toLocaleString('en-US');
+      personalValue.textContent = personal.toLocaleString('en-US');
+      personalSalawatValue.textContent = personalSalawat.toLocaleString('en-US');
+      cyclesLabel.textContent = cyclesThisSession > 0 ? ('أكملت ' + cyclesThisSession + ' دورة') : '';
+      updateBeads();
+      renderGoal();
+      if(bubbleEnabled){ updateBubbleCountDisplay(); }
+      if(bubbleEnabled && window.AndroidBridge && typeof AndroidBridge.updateCount === 'function'){
+        try{ AndroidBridge.updateCount(bubbleCount); }catch(e){}
+      }
+    }
+
+    function vibrate(pattern){
+      if(navigator.vibrate){
+        try{ navigator.vibrate(pattern); }catch(e){}
+      }
+    }
+
+    function loadPersonal(){
+      try {
+        personal = parseInt(localStorage.getItem(PERSONAL_KEY), 10) || 0;
+        personalSalawat = parseInt(localStorage.getItem(PERSONAL_SALAWAT_KEY), 10) || 0;
+      } catch(e){}
+      render();
+    }
+
+    function savePersonal(){
+      try {
+        localStorage.setItem(PERSONAL_KEY, String(personal));
+        localStorage.setItem(PERSONAL_SALAWAT_KEY, String(personalSalawat));
+      } catch(e){}
+    }
+
+    function incrementPersonal(){
+      personal++;
+      if(addToTotal) personalSalawat++;
+      savePersonal();
+      personalValue.textContent = personal.toLocaleString('en-US');
+      personalSalawatValue.textContent = personalSalawat.toLocaleString('en-US');
+    }
+
+    function showUserNameBadge(name){
+      userNameDisplay.textContent = '👤 ' + name;
+      userNameDisplay.style.display = 'inline-block';
+    }
+
+    function loadUserName(){
+      try {
+        const s = localStorage.getItem(USER_KEY);
+        if(s){
+          currentUser = s;
+          userNameInput.value = s;
+          showUserNameBadge(s);
+        }
+      } catch(e){}
+    }
+
+    function sanitizeKey(str) {
+      return str
+        .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '')
+        .replace(/[.#$[\]/]/g, '_')
+        // strip HTML-special characters too, as defense in depth on top
+        // of escapeHtml() at render time
+        .replace(/[<>"'`&]/g, '_')
+        .trim();
+    }
+
+    function finalizeSetUserName(name){
+      currentUser = name;
+      try { localStorage.setItem(USER_KEY, name); } catch(e) {}
+      showUserNameBadge(name);
+      showToast('✅ تم حفظ الاسم: ' + name);
+
+      if(isFirebaseReady){
+        database.ref('nameOwners/' + name + '/deviceId').set(deviceId)
+          .catch(() => { showToast('⚠️ تعذّر تسجيل الاسم في القائمة المشتركة'); });
+        database.ref('nameOwners/' + name + '/lastActive').set(Date.now());
+      }
+
+      loadWeeklyManualTotal();
+      loadLeaderboardFromFirebase();
+      loadAllTimeTotal();
+      renderActiveUI();
+    }
+
+    function setUserName(){
+      const name = sanitizeKey(userNameInput.value);
+      if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }
+      if(name.length > 30){ showToast('❌ الاسم طويل جداً'); return; }
+
+      if(!isFirebaseReady || !deviceId){
+        showToast('❌ يلزم الاتصال بالإنترنت للتحقق من الاسم قبل الحفظ');
+        return;
+      }
+
+      checkNameUsedBeforeAndSave(name);
+    }
+
+    function showNameOverlay(){
+      nameOverlayInput.value = '';
+      nameOverlay.classList.add('show');
+    }
+
+    function hideNameOverlay(){
+      nameOverlay.classList.remove('show');
+    }
+
+    function maybeShowNameOverlay(){
+      if(addToTotal && !currentUser){
+        showNameOverlay();
+      }
+    }
+
+    function saveNameFromOverlay(){
+      const name = sanitizeKey(nameOverlayInput.value);
+      if(!name){ showToast('❌ أدخل اسمك أولاً'); return; }
+      if(name.length > 30){ showToast('❌ الاسم طويل جداً'); return; }
+
+      if(!isFirebaseReady || !deviceId){
+        showToast('❌ يلزم الاتصال بالإنترنت للتحقق من الاسم قبل الحفظ');
+        return;
+      }
+
+      hideNameOverlay();
+      userNameInput.value = name;
+      checkNameUsedBeforeAndSave(name);
+    }
+
+    nameOverlaySaveBtn.addEventListener('click', saveNameFromOverlay);
+    nameOverlaySkipBtn.addEventListener('click', hideNameOverlay);
+    nameOverlayInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); saveNameFromOverlay(); } });
+
+    function checkNameUsedBeforeAndSave(name){
+      database.ref('nameOwners/' + name + '/deviceId').once('value', async (snap) => {
+        const savedDevice = snap.val();
+        const usedByAnotherDevice = savedDevice && savedDevice !== deviceId;
+
+        if(usedByAnotherDevice){
+          const ok = await customConfirm(
+            '⚠️ الاسم "' + name + '" محفوظ مسبقاً من جهاز آخر.\n\n' +
+            'إن كنت متأكداً أنه أنت، اضغط "موافق" للمتابعة.\n' +
+            'إن لم تكن متأكداً، اضغط "إلغاء" وعدّل الاسم (مثلاً أضف رقماً).'
+          );
+          if(!ok){
+            showToast('❌ تم الإلغاء، جرّب تعديل الاسم');
+            return;
+          }
+        }
+
+        finalizeSetUserName(name);
+      }, () => {
+        showToast('❌ تعذّر التحقق من الاسم، تأكد من الاتصال وحاول مجدداً');
+      });
+    }
+
+    function loadWeeklyManualTotal(){
+      if(!currentUser) return;
+      const weekKey = getCurrentWeekKey();
+
+      if(currentWeeklyRef) {
+        currentWeeklyRef.off();
+      }
+
+      if(isFirebaseReady) {
+        currentWeeklyRef = database.ref('weeklyManualAdditions/' + weekKey + '/' + currentUser);
+        currentWeeklyRef.on('value', (snap) => {
+          weeklyManualTotal = snap.val() || 0;
+          setWeeklyManualTotalLocal(weeklyManualTotal);
+          updateWeeklyLimitDisplay();
+        });
+      } else {
+        weeklyManualTotal = getWeeklyManualTotalFromLocal();
+        updateWeeklyLimitDisplay();
+      }
+    }
+
+    // يعرض إجمالي مشاركة الاسم المسجَّل منذ أول استخدام (وليس بحدود
+    // الأسبوع الحالي فقط كما بقائمة الأوائل)، مخزَّن بـ allTimeTotals/<name>
+    // بقاعدة البيانات المشتركة — نفس المسار المستخدم بلوحة تحكم الإدارة،
+    // بحيث يبقى محفوظاً حتى لو تغيّر الجهاز أو أُعيد تثبيت التطبيق، ويطابق
+    // ما تراه المديرة بلوحة التحكم بالضبط.
+    function loadAllTimeTotal(){
+      if(!currentUser || !isFirebaseReady){
+        allTimeTotalCard.style.display = 'none';
+        return;
+      }
+      if(allTimeTotalRef) allTimeTotalRef.off();
+      allTimeTotalRef = database.ref('allTimeTotals/' + currentUser);
+      allTimeTotalCard.style.display = 'flex';
+      allTimeTotalRef.on('value', (snap) => {
+        allTimeTotalValue.textContent = (Number(snap.val()) || 0).toLocaleString('en-US');
+      });
+    }
+
+    // isManual: true لو المصدر إضافة يدوية (يُسجَّل أيضاً بـ allTimeManualTotals
+    // كنظير لعلاقة leaderboard/weeklyManualAdditions الأسبوعية)، false لو ضغط مباشر.
+    function bumpAllTimeTotal(user, amount, isManual){
+      if(!isFirebaseReady || !user) return;
+      database.ref('allTimeTotals/' + user).transaction((v) => (v || 0) + amount);
+      if(isManual){
+        database.ref('allTimeManualTotals/' + user).transaction((v) => (v || 0) + amount);
+      }
+    }
+
+    function updateWeeklyLimitDisplay(){
+      const remaining = Math.max(0, WEEKLY_MANUAL_LIMIT - weeklyManualTotal);
+      weeklyLimitInfo.textContent = 'المتبقي لهذا الأسبوع: ' + remaining.toLocaleString('en-US');
+    }
+
+    function getWeeklyManualTotalFromLocal(){
+      try {
+        const key = 'weekly_manual_' + getCurrentWeekKey() + '_' + currentUser;
+        return parseInt(localStorage.getItem(key), 10) || 0;
+      } catch(e){ return 0; }
+    }
+
+    function setWeeklyManualTotalLocal(value){
+      try {
+        const key = 'weekly_manual_' + getCurrentWeekKey() + '_' + currentUser;
+        localStorage.setItem(key, String(value));
+      } catch(e) {}
+    }
+
+    function addManualCount(){
+      if(!currentUser){ showToast('❌ سجّل اسمك أولاً'); return; }
+      const val = parseInt(manualInput.value, 10);
+      if(isNaN(val) || val <= 0){ showToast('❌ أدخل عدداً صحيحاً'); manualInput.value = ''; return; }
+      if(val > 99999){ showToast('❌ الحد الأقصى 99,999 في المرة'); manualInput.value = ''; return; }
+
+      let currentTotal = weeklyManualTotal;
+      if(currentTotal + val > WEEKLY_MANUAL_LIMIT){
+        const remaining = Math.max(0, WEEKLY_MANUAL_LIMIT - currentTotal);
+        showToast('❌ تجاوزت الحد الأسبوعي، المتبقي: ' + remaining.toLocaleString('en-US'));
+        manualInput.value = '';
+        return;
+      }
+
+      if(isFirebaseReady){
+        const weekKey = getCurrentWeekKey();
+        const ref = database.ref('weeklyManualAdditions/' + weekKey + '/' + currentUser);
+        ref.transaction((v) => (v || 0) + val, (error, committed) => {
+          if(error) { showToast('❌ خطأ في الاتصال'); return; }
+          if(committed){
+            database.ref('totalCount').transaction((v) => (v || 0) + val);
+            database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + val);
+            bumpAllTimeTotal(currentUser, val, true);
+            personal += val;
+            personalSalawat += val;
+            savePersonal();
+            render();
+            showToast('✅ تمت إضافة ' + val.toLocaleString('en-US'));
+            manualInput.value = '';
+          }
+        });
+      } else {
+        const newTotal = currentTotal + val;
+        setWeeklyManualTotalLocal(newTotal);
+        weeklyManualTotal = newTotal;
+        updateWeeklyLimitDisplay();
+        saveToOfflineQueue('manualAdd', val, currentUser);
+        total += val;
+        personal += val;
+        personalSalawat += val;
+        savePersonal();
+        try { localStorage.setItem('offline_total', String(total)); } catch(e) {}
+        render();
+        showToast('📶 تم الحفظ محلياً (سيتم المزامنة تلقائياً)');
+        manualInput.value = '';
+      }
+    }
+
+    function loadTotalFromFirebase(){
+      if(totalRef) totalRef.off();
+      totalRef = database.ref('totalCount');
+      totalRef.on('value', (snap) => {
+        total = Number(snap.val()) || 0;
+        try { localStorage.setItem('offline_total', String(total)); } catch(e) {}
+        render();
+      });
+    }
+
+    function syncOfflineQueue(){
+      if(offlineQueue.length === 0 || !isFirebaseReady || isSyncingQueue) return;
+      isSyncingQueue = true;
+      const queue = [...offlineQueue];
+      offlineQueue = [];
+      try { localStorage.removeItem('offline_queue'); } catch(e) {}
+
+      const weekKey = getCurrentWeekKey();
+      queue.forEach(item => {
+        if (item.type === 'tap') {
+          database.ref('totalCount').transaction((v) => (v || 0) + item.value);
+          if (item.user) {
+            database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);
+            bumpAllTimeTotal(item.user, item.value, false);
+          }
+        }
+        else if (item.type === 'manualAdd' && item.user) {
+          const ref = database.ref('weeklyManualAdditions/' + weekKey + '/' + item.user);
+          ref.transaction((currentVal) => {
+            const newVal = (currentVal || 0) + item.value;
+            if(newVal > WEEKLY_MANUAL_LIMIT) return undefined;
+            return newVal;
+          }, (error, committed) => {
+            if(committed){
+              database.ref('totalCount').transaction((v) => (v || 0) + item.value);
+              database.ref('leaderboard/' + weekKey + '/' + item.user).transaction((v) => (v || 0) + item.value);
+              bumpAllTimeTotal(item.user, item.value, true);
+            }
+          });
+        }
+      });
+      isSyncingQueue = false;
+      if(queue.length > 0) showToast('✅ تمت مزامنة ' + queue.length + ' عملية معلقة');
+    }
+
+    function saveToOfflineQueue(type, value, user){
+      const last = offlineQueue[offlineQueue.length - 1];
+      if(type === 'tap' && last && last.type === 'tap' && last.user === user && last.value + value <= 99999){
+        last.value += value;
+      } else {
+        offlineQueue.push({type, value, user});
+      }
+      try {
+        localStorage.setItem('offline_queue', JSON.stringify(offlineQueue));
+      } catch(e) {}
+    }
+
+    function addActiveUser(userName){
+      if(activeUsersTimers[userName]){
+        clearTimeout(activeUsersTimers[userName]);
+      }
+      activeUsersTimers[userName] = setTimeout(() => {
+        delete activeUsersTimers[userName];
+        renderActiveUI();
+      }, 6000);
+
+      renderActiveUI();
+    }
+
+    function renderActiveUI(){
+      const users = Object.keys(activeUsersTimers);
+      activeSideRight.innerHTML = '';
+      activeSideLeft.innerHTML = '';
+
+      users.slice(0, 4).forEach((userName, idx) => {
+        const pill = document.createElement('div');
+        pill.className = 'active-dhikr-pill';
+        pill.innerHTML = `📿 ${escapeHtml(userName)} <span>يصلي على النبي الآن</span>`;
+        if(idx % 2 === 0){
+          activeSideRight.appendChild(pill);
+        } else {
+          activeSideLeft.appendChild(pill);
+        }
+      });
+    }
+
+    function hitTotal(amount = 1){
+      const weekKey = getCurrentWeekKey();
+      if(isFirebaseReady){
+        database.ref('totalCount').transaction((v) => (v || 0) + amount);
+        if(currentUser) {
+          database.ref('leaderboard/' + weekKey + '/' + currentUser).transaction((v) => (v || 0) + amount);
+          bumpAllTimeTotal(currentUser, amount, false);
+        }
+      } else {
+        saveToOfflineQueue('tap', amount, currentUser);
+        total += amount;
+        try { localStorage.setItem('offline_total', String(total)); } catch(e) {}
+        render();
+      }
+    }
+
+    function loadLeaderboardFromFirebase(){
+      const weekKey = getCurrentWeekKey();
+      if(leadRef) leadRef.off();
+      leadRef = database.ref('leaderboard/' + weekKey);
+      leadRef.on('value', (s) => {
+        const data = s.val() || {};
+
+        if (!isFirstLeadLoad) {
+          Object.keys(data).forEach(user => {
+            const oldVal = previousScores[user] || 0;
+            const newVal = Number(data[user]) || 0;
+            if (newVal > oldVal && user !== currentUser) {
+              addActiveUser(user);
+            }
+          });
+        } else {
+          isFirstLeadLoad = false;
+        }
+
+        previousScores = {};
+        Object.keys(data).forEach(u => {
+          previousScores[u] = Number(data[u]) || 0;
+        });
+
+        const prevPos = new Map(lastRankOrder.map((n, i) => [n, i]));
+        const sorted = Object.entries(data).sort((a, b) => {
+          const diff = (Number(b[1]) || 0) - (Number(a[1]) || 0);
+          if (diff !== 0) return diff;
+          const pa = prevPos.has(a[0]) ? prevPos.get(a[0]) : Infinity;
+          const pb = prevPos.has(b[0]) ? prevPos.get(b[0]) : Infinity;
+          return pa === pb ? 0 : (pa < pb ? -1 : 1);
+        });
+        lastRankOrder = sorted.map(([name]) => name);
+
+        const satStart = getWeekStartSaturday();
+        const friEnd = new Date(satStart);
+        friEnd.setDate(friEnd.getDate() + 6);
+        weekInfo.textContent = '📅 الأسبوع ' + getWeekNumber() + ' - ' + satStart.getFullYear() +
+          ' (من ' + formatDateAr(satStart) + ' إلى ' + formatDateAr(friEnd) + ')';
+
+        if(sorted.length === 0){
+          leaderboardBody.innerHTML = '<div class="leaderboard-empty">لا يوجد مشاركون هذا الأسبوع بعد</div>';
+          return;
+        }
+        let html = '';
+        sorted.forEach(([name, count], idx) => {
+          const isUser = name === currentUser;
+          const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+          html += '<div class="leaderboard-item" style="' + (isUser ? 'background:rgba(201,161,90,0.18);border-radius:6px;padding:4px 8px;margin:2px 0;' : 'padding:4px 8px;') + '">' +
+            '<span><span class="lb-rank">' + medal + '</span> <span class="lb-name">' + escapeHtml(name) + (isUser ? ' ⭐' : '') + '</span></span>' +
+            '<span class="lb-count">' + Number(count).toLocaleString('en-US') + '</span></div>';
+        });
+        leaderboardBody.innerHTML = html;
+      }, () => {
+        leaderboardBody.innerHTML = '<div class="leaderboard-empty">تعذر جلب البيانات، تأكد من الاتصال بالإنترنت</div>';
+      });
+    }
+
+    function toggleLeaderboard(){
+      const isVisible = leaderboardContainer.style.display === 'block';
+      leaderboardContainer.style.display = isVisible ? 'none' : 'block';
+      if(!isVisible) {
+        loadLeaderboardFromFirebase();
+      }
+    }
+
+    function tap(){
+      if(addToTotal && !currentUser){ showToast('❌ سجّل اسمك أولاً للمشاركة في عدّ الصلاة على النبي ﷺ المشترك'); return; }
+      current++;
+      bubbleCount++;
+      saveBubbleCount();
+      vibrate(12);
+
+      if(!isInfinite && current >= activeTarget){
+        cyclesThisSession++;
+        vibrate([40,30,40,30,80]);
+        showToast('✅ أتممت ' + activeTarget + ' – ' + activeDhikr);
+        current = 0;
+      }
+      render();
+      if(addToTotal){
+        hitTotal(1);
+      }
+      incrementPersonal();
+    }
+
+    function setDhikr(dhikr, target, addTotal){
+      activeDhikr = dhikr;
+      addToTotal = (addTotal === 'true');
+      isInfinite = (target === '∞');
+      if(isInfinite){
+        activeTarget = Infinity;
+        buildBeads(33);
+      } else {
+        activeTarget = parseInt(target, 10);
+        buildBeads(activeTarget);
+      }
+      current = 0;
+      render();
+    }
+
+    bubbleToggleBtn.addEventListener('click', () => {
+      if(bubbleEnabled) disableBubble(); else enableBubble();
+    });
+
+    bubbleResetBtn.addEventListener('click', () => {
+      bubbleCount = 0;
+      saveBubbleCount();
+      render();
+      showToast('🔄 تم تصفير عدّاد الفقاعة فقط');
+    });
+
+    try {
+      const savedQueue = localStorage.getItem('offline_queue');
+      if(savedQueue) {
+        offlineQueue = JSON.parse(savedQueue);
+      }
+    } catch(e) {}
+
+    function setOfflineStatus(){
+      onlineIndicator.className = 'status-offline';
+      onlineIndicator.textContent = '○';
+      connectionStatus.textContent = '⚠️ غير متصل';
+      connectionStatus.style.borderColor = '#e57373';
+      connectionStatus.style.color = '#e57373';
+      connectionStatus.style.background = 'rgba(229,115,115,0.15)';
+    }
+    setTimeout(() => { if(!isFirebaseReady) setOfflineStatus(); }, 10000);
+
+    const connectedRef = database.ref('.info/connected');
+    connectedRef.on('value', (snap) => {
+      if (snap.val() === true) {
+        isFirebaseReady = true;
+        onlineIndicator.className = 'status-online';
+        onlineIndicator.textContent = '●';
+        connectionStatus.textContent = '● مباشر';
+        connectionStatus.style.borderColor = '#4CAF50';
+        connectionStatus.style.color = '#81C784';
+        connectionStatus.style.background = 'rgba(76,175,80,0.15)';
+        syncOfflineQueue();
+        loadTotalFromFirebase();
+        loadLeaderboardFromFirebase();
+        if(currentUser) {
+          loadWeeklyManualTotal();
+          loadAllTimeTotal();
+        }
+      } else {
+        isFirebaseReady = false;
+        setOfflineStatus();
+
+        try {
+          const saved = localStorage.getItem('offline_total');
+          if (saved) {
+            total = parseInt(saved, 10) || 0;
+            render();
+          }
+        } catch(e) {}
+
+        if(currentUser){
+          weeklyManualTotal = getWeeklyManualTotalFromLocal();
+          updateWeeklyLimitDisplay();
+        }
+      }
+    });
+
+    database.ref('.info/serverTimeOffset').on('value', (snap) => {
+      serverTimeOffsetMs = snap.val() || 0;
+    });
+
+    tapBtn.addEventListener('click', tap);
+    resetBtn.addEventListener('click', () => {
+      current = 0;
+      cyclesThisSession = 0;
+      render();
+    });
+    personalResetBtn.addEventListener('click', async () => {
+      const ok = await customConfirm('هل تريد تصفير العدّاد الفردي؟');
+      if(!ok) return;
+      personal = 0;
+      personalSalawat = 0;
+      savePersonal();
+      render();
+    });
+
+    dhikrSelect.addEventListener('click', (e) => {
+      const chip = e.target.closest('.dhikr-chip');
+      if(!chip) return;
+      [...dhikrSelect.children].forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      setDhikr(chip.dataset.dhikr, chip.dataset.target, chip.dataset.addTotal || 'false');
+      maybeShowNameOverlay();
+    });
+
+    manualAddBtn.addEventListener('click', addManualCount);
+    manualClearBtn.addEventListener('click', () => { manualInput.value = ''; });
+    manualInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addManualCount(); } });
+    manualInput.addEventListener('input', () => {
+      let v = manualInput.value.replace(/[^0-9]/g, '');
+      if(v.length > 5) v = v.slice(0, 5);
+      manualInput.value = v;
+    });
+
+    setNameBtn.addEventListener('click', setUserName);
+    userNameInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); setUserName(); } });
+    toggleLeaderboardBtn.addEventListener('click', toggleLeaderboard);
+
+    deviceId = getOrCreateDeviceId();
+    setDhikr('اللهم صل على محمد وآله وسلم', '∞', 'true');
+    loadPersonal();
+    loadUserName();
+    loadBubbleState();
+    loadTotalFromFirebase();
+    if(currentUser) loadWeeklyManualTotal();
+    render();
+    if(currentUser) loadAllTimeTotal();
+    maybeShowNameOverlay();
+
+    try {
+      const saved = localStorage.getItem('offline_total');
+      if (saved) {
+        total = parseInt(saved, 10) || 0;
+        render();
+      }
+    } catch(e) {}
+
+    window.androidTap = tap;
+  })();
+</script>
+</body>
+  </html>
