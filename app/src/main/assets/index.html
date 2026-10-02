@@ -1048,6 +1048,30 @@
       return 'week_' + getWeekNumber() + '_' + satStart.getFullYear();
     }
 
+    // Keep week-scoped Firebase listeners in sync when Saturday starts.
+    // Without this, an app left open across midnight keeps listening to
+    // the previous week's leaderboard until the page is reloaded.
+    let activeWeekKey = '';
+
+    function refreshWeekIfChanged(force = false){
+      const newWeekKey = getCurrentWeekKey();
+      if(!force && activeWeekKey === newWeekKey) return;
+
+      activeWeekKey = newWeekKey;
+      previousScores = {};
+      lastRankOrder = [];
+      isFirstLeadLoad = true;
+
+      if(currentUser) loadWeeklyManualTotal();
+      if(isFirebaseReady) loadLeaderboardFromFirebase();
+    }
+
+    setInterval(() => refreshWeekIfChanged(false), 60000);
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible') refreshWeekIfChanged(false);
+    });
+    window.addEventListener('focus', () => refreshWeekIfChanged(false));
+
     function formatDateAr(d){
       return d.toLocaleDateString('ar-EG', { day:'2-digit', month:'2-digit', year:'numeric' });
     }
