@@ -1398,10 +1398,17 @@
       try { localStorage.removeItem('offline_queue'); } catch(e) {}
 
       const currentWeekKey = getCurrentWeekKey();
+      const unresolvedLegacy = [];
       queue.forEach(item => {
-        // New queue items remember the week in which the action actually happened.
-        // Legacy items (saved before this fix) fall back to the current week.
-        const itemWeekKey = item.weekKey || currentWeekKey;
+        // Never move an old offline action into a new week.
+        // Every modern queue item carries the exact week in which it happened.
+        // Legacy items without weekKey are quarantined instead of being credited
+        // to the current week, because doing that contaminates Saturday's fresh week.
+        if(!item.weekKey){
+          unresolvedLegacy.push(item);
+          return;
+        }
+        const itemWeekKey = item.weekKey;
         if (item.type === 'tap') {
           database.ref('totalCount').transaction((v) => (v || 0) + item.value);
           if (item.user) {
@@ -1424,8 +1431,16 @@
           });
         }
       });
+      // Preserve unknown legacy records locally for manual recovery, but never
+      // inject them into the newly-started week.
+      if(unresolvedLegacy.length){
+        offlineQueue = unresolvedLegacy;
+        try { localStorage.setItem('offline_queue', JSON.stringify(offlineQueue)); } catch(e) {}
+        showToast('⚠️ توجد عمليات قديمة معلقة تحتاج مراجعة، ولم تُضف إلى الأسبوع الجديد', 5000);
+      }
       isSyncingQueue = false;
-      if(queue.length > 0) showToast('✅ تمت مزامنة ' + queue.length + ' عملية معلقة');
+      const syncedCount = queue.length - unresolvedLegacy.length;
+      if(syncedCount > 0) showToast('✅ تمت مزامنة ' + syncedCount + ' عملية معلقة');
     }
 
     function saveToOfflineQueue(type, value, user, weekKey = getCurrentWeekKey()){
