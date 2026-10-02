@@ -1048,6 +1048,24 @@
       return 'week_' + getWeekNumber() + '_' + satStart.getFullYear();
     }
 
+    // External/manual weekly totals are usually reported on Saturday after
+    // the Friday-ending week has closed. Keep live taps in the new week,
+    // but credit Saturday manual additions to the week that just ended.
+    function getManualAdditionWeekKey(){
+      const now = serverNow();
+      if(now.getDay() !== 6) return getCurrentWeekKey();
+      const previousWeek = new Date(now);
+      previousWeek.setDate(previousWeek.getDate() - 1);
+      const satStart = getWeekStartSaturday(previousWeek);
+      const year = satStart.getFullYear();
+      const jan1 = new Date(year, 0, 1);
+      const diffToFirstSaturday = (6 - jan1.getDay() + 7) % 7;
+      const firstSaturday = new Date(year, 0, 1 + diffToFirstSaturday);
+      const diffDays = Math.round((satStart - firstSaturday) / 86400000);
+      const weekNum = Math.max(1, Math.floor(diffDays / 7) + 1);
+      return 'week_' + weekNum + '_' + year;
+    }
+
     // Keep week-scoped Firebase listeners in sync when Saturday starts.
     // Without this, an app left open across midnight keeps listening to
     // the previous week's leaderboard until the page is reloaded.
@@ -1266,7 +1284,7 @@
 
     function loadWeeklyManualTotal(){
       if(!currentUser) return;
-      const weekKey = getCurrentWeekKey();
+      const weekKey = getManualAdditionWeekKey();
 
       if(currentWeeklyRef) {
         currentWeeklyRef.off();
@@ -1320,14 +1338,14 @@
 
     function getWeeklyManualTotalFromLocal(){
       try {
-        const key = 'weekly_manual_' + getCurrentWeekKey() + '_' + currentUser;
+        const key = 'weekly_manual_' + getManualAdditionWeekKey() + '_' + currentUser;
         return parseInt(localStorage.getItem(key), 10) || 0;
       } catch(e){ return 0; }
     }
 
     function setWeeklyManualTotalLocal(value){
       try {
-        const key = 'weekly_manual_' + getCurrentWeekKey() + '_' + currentUser;
+        const key = 'weekly_manual_' + getManualAdditionWeekKey() + '_' + currentUser;
         localStorage.setItem(key, String(value));
       } catch(e) {}
     }
@@ -1347,7 +1365,7 @@
       }
 
       if(isFirebaseReady){
-        const weekKey = getCurrentWeekKey();
+        const weekKey = getManualAdditionWeekKey();
         const ref = database.ref('weeklyManualAdditions/' + weekKey + '/' + currentUser);
         ref.transaction((v) => (v || 0) + val, (error, committed) => {
           if(error) { showToast('❌ خطأ في الاتصال'); return; }
@@ -1368,7 +1386,7 @@
         setWeeklyManualTotalLocal(newTotal);
         weeklyManualTotal = newTotal;
         updateWeeklyLimitDisplay();
-        saveToOfflineQueue('manualAdd', val, currentUser, getCurrentWeekKey());
+        saveToOfflineQueue('manualAdd', val, currentUser, getManualAdditionWeekKey());
         total += val;
         personal += val;
         personalSalawat += val;
